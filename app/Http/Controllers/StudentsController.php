@@ -21,7 +21,7 @@ class StudentsController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('students/create');
     }
 
     /**

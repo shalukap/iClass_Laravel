@@ -1,7 +1,7 @@
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { FaEdit } from "react-icons/fa";
 import { CgAddR } from "react-icons/cg";
@@ -113,7 +113,7 @@ export default function Index() {
 
   </table>
   <div className="fixed bottom-4 right-4">
-    <button className=" hover:text-red-700 text-5xl bg-blue-900 text-red-500 font-bold " onClick={()=>navigate("/admin/studentdetails")}><CgAddR /></button>
+    <button className=" hover:text-red-700 text-5xl bg-blue-900 text-red-500 font-bold " onClick={()=>router.visit(route('students.create'))}><CgAddR /></button>
   </div>
 </div>
         </AppLayout>

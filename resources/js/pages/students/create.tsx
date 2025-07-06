@@ -24,7 +24,7 @@ export default function Create() {
     const[parentName, setParentName]= useState('');
     const[tpNo,setTpno]= useState('');
     const[watsappNo,setWatsappNo]= useState('');
-    const [isActive,setIsactive] = useState(true);
+    const [isActive, setIsActive] = useState(true);
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Students" />
