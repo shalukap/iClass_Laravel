@@ -21,7 +21,7 @@ class LecturesController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('lectures/CreateOrEdit');
     }
 
     /**
