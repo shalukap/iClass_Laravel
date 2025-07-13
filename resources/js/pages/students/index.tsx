@@ -50,11 +50,12 @@ function handleDelete(id:number) {
   }
 });
 }
+/*
 function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
     const searchQuery = e.target.value;
     router.get(route('students.search'), { search: searchQuery });
   }
-
+*/
  
 export default function Index({students:originalStudents}: {students:Student[]}) {
     const[searchStudent, setSearchStudent] = useState('');  
