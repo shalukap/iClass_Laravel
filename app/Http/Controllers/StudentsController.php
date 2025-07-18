@@ -13,12 +13,12 @@ class StudentsController extends Controller
      */
     public function index()
     {
-        $students= Students::latest()->get();
-        
-        
-        
-        return Inertia::render('students/index',[
-            'students'=>$students
+        $students = Students::latest()->get();
+
+
+
+        return Inertia::render('students/index', [
+            'students' => $students
         ]);
     }
 
@@ -35,24 +35,34 @@ class StudentsController extends Controller
      */
     public function store(Request $request)
     {
-        
-       $last=Students::orderBy('sid','desc')->first();
-       if (!$last) {
-            $number=1;
-        } else {
-            $number=substr($last->sid, 3)+1;
-        }
-        $sid='STU'.sprintf('%06d',  $number);
-        $request->merge(['sid'=>$sid]);
+        $last = Students::orderBy('sid', 'desc')->first();
+        $number = $last ? (substr($last->sid, 3) + 1) : 1;
+        $sid = 'STU' . sprintf('%06d', $number);
+        $request->merge(['sid' => $sid]);
+
+
+        $request->merge([
+            'parent' => $request->parent ?? 'Unknown Parent',
+            'phone' => $request->phone,
+            'status' => $request->status,
+            'school' => $request->school ?? 'SCH000',
+        ]);
+
+
         if ($request->hasFile('image')) {
-            $request->file('image')->move(public_path('images'), $request->file('image')->getClientOriginalName());
-            $request->merge(['image' => $request->file('image')->getClientOriginalName()]);
+            $filename = $request->file('image')->getClientOriginalName();
+            $request->file('image')->move(public_path('images'), $filename);
+            $request->merge(['image' => $filename]);
+        } else {
+            $request->merge(['image' => 'default.jpg']);
         }
-       
-        $student = new Students($request->all());       
+
+        $student = new Students($request->all());
         $student->save();
+
         return redirect()->route('students.index');
     }
+
 
     /**
      * Display the specified resource.
@@ -67,10 +77,10 @@ class StudentsController extends Controller
      */
     public function edit(Students $student)
     {
-        
-        return Inertia::render('students/create',[
-            'student'=>$student,
-            'isEdit'=>true
+
+        return Inertia::render('students/create', [
+            'student' => $student,
+            'isEdit' => true
         ]);
     }
 
@@ -83,21 +93,21 @@ class StudentsController extends Controller
             $request->file('image')->move(public_path('images'), $request->file('image')->getClientOriginalName());
             $request->merge(['image' => $request->file('image')->getClientOriginalName()]);
         }
-       
-       if($student){
-           $student->sid=$request->sid;
-           $student->sname=$request->sname;
-           $student->gender=$request->gender;
-           $student->address=$request->address;
-           $student->dob=$request->dob;
-           $student->school=$request->school;
-           $student->parentName=$request->parentName;
-           $student->tpNo=$request->tpNo;
-           $student->watsapp=$request->watsapp;
-           $student->isActive=$request->isActive;
-           $student->save();
-       }
-       
+
+        if ($student) {
+            $student->sid = $request->sid;
+            $student->name = $request->name;
+            $student->gender = $request->gender;
+            $student->address = $request->address;
+            $student->dob = $request->dob;
+            $student->school = $request->school;
+            $student->parent = $request->parent;
+            $student->phone = $request->phone;
+            $student->watsapp = $request->watsapp;
+            $student->status = $request->status;
+            $student->save();
+        }
+
         return redirect()->route('students.index');
     }
 
@@ -106,11 +116,11 @@ class StudentsController extends Controller
      */
     public function destroy(Students $student)
     {
-       
-        if($student){
+
+        if ($student) {
             $student->delete();
         }
         return redirect()->route('students.index');
     }
-    
+
 }

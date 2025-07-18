@@ -1,10 +1,11 @@
-// resources/ts/Pages/Lecture/Index.tsx
 import AppLayout from '@/layouts/app-layout';
-import { Head, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import { CgAddR } from 'react-icons/cg';
-import { MdModeEdit, MdDelete } from 'react-icons/md';
 import { type BreadcrumbItem } from '@/types';
+import { Head, router, Link } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { FaEdit } from 'react-icons/fa';
+import { CgAddR } from 'react-icons/cg';
+import { MdDeleteForever } from 'react-icons/md';
+import Swal from 'sweetalert2';
 
 interface Lecture {
   lid: string;
@@ -13,83 +14,88 @@ interface Lecture {
   qualification: string;
   tp_no: string;
   whatsapp_no: string;
+  lec_dob: string;
+  lec_email: string;
+  status: boolean;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Lectures', href: '/lectures' },
 ];
 
-export default function Index() {
-  const [lectures, setLectures] = useState<Lecture[]>([]);
+function handleDelete(lid: string) {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: "You won't be able to revert this!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Yes, delete it!',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      router.delete(route('lectures.destroy', lid), {
+        onSuccess: () => {
+          Swal.fire({
+            title: 'Deleted!',
+            text: 'Your lecture has been deleted.',
+            icon: 'success',
+          });
+        },
+      });
+    }
+  });
+}
+
+export default function Index({ lectures: originalLectures }: { lectures: Lecture[] }) {
+  const [searchLecture, setSearchLecture] = useState('');
+  const [filteredLectures, setFilteredLectures] = useState(originalLectures);
 
   useEffect(() => {
-    router.visit(route('lectures.index'), {
-      only: ['lectures'],
-      onSuccess: (page) => {
-        if (page.props.lectures) {
-          setLectures(page.props.lectures as Lecture[]);
-        }
-      },
-    });
-  }, []);
-
-  const handleDelete = (id: string) => {
-    router.delete(route('lectures.destroy', id), {
-      onSuccess: () => setLectures((prev) => prev.filter((l) => l.lid !== id)),
-    });
-  };
+    const searchQuery = searchLecture.toLowerCase();
+    const filtered = originalLectures.filter(
+      (lecture) =>
+        (lecture.lid?.toLowerCase() || '').includes(searchQuery) ||
+        (lecture.lec_name?.toLowerCase() || '').includes(searchQuery)
+    );
+    setFilteredLectures(filtered);
+  }, [searchLecture, originalLectures]);
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Lectures" />
       <div className="w-full h-full overflow-x-auto p-4">
-        <form className="max-w-4xl mx-auto bg-slate-800 p-8 rounded-xl shadow-lg text-white">
-          <h2 className="text-2xl font-semibold mb-6 text-center">Lecture Information</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label htmlFor="lid" className="block mb-2 text-sm font-medium">Lecture ID</label>
-              <input
-                type="text"
-                id="lid"
-                placeholder="Enter LID"
-                className="w-full px-4 py-2 text-white bg-slate-700 rounded-md border border-gray-300"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="lec_name" className="block mb-2 text-sm font-medium">Lecture Name</label>
-              <input
-                type="text"
-                id="lec_name"
-                placeholder="Enter Name"
-                className="w-full px-4 py-2 text-white bg-slate-700 rounded-md border border-gray-300"
-              />
-            </div>
-          </div>
-
-          <div className="mt-8 text-center">
-            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
-              Submit
-            </button>
+        <form className="max-w-full mx-auto bg-slate-800 p-8 rounded-xl shadow-lg text-white">
+          <h2 className="text-2xl font-semibold mb-6 text-center">Lecture Info</h2>
+          <div>
+            <input
+              type="text"
+              id="search"
+              className="w-full px-4 py-2 text-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search LID, Name"
+              value={searchLecture}
+              onChange={(e) => setSearchLecture(e.target.value)}
+            />
           </div>
         </form>
 
-        <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow mt-6">
-          <thead className="bg-slate-800 text-white">
+        <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow">
+          <thead className="bg-slate-800 text-white border-white">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-semibold">LID</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Lecture Name</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Name</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Address</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Qualification</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Phone</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">WhatsApp</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">DOB</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 text-sm">
-            {lectures.map((lec) => (
+          <tbody className="divide-y divide-gray-200 text-sm text-slate-800">
+            {filteredLectures.map((lec) => (
               <tr key={lec.lid}>
                 <td className="px-4 py-2">{lec.lid}</td>
                 <td className="px-4 py-2">{lec.lec_name}</td>
@@ -97,21 +103,23 @@ export default function Index() {
                 <td className="px-4 py-2">{lec.qualification}</td>
                 <td className="px-4 py-2">{lec.tp_no}</td>
                 <td className="px-4 py-2">{lec.whatsapp_no}</td>
+                <td className="px-4 py-2">{new Date(lec.lec_dob).toLocaleDateString()}</td>
+                <td className="px-4 py-2">{lec.lec_email}</td>
                 <td className="px-4 py-2">
-                  <span className="inline-block px-3 py-1 bg-green-500 text-white rounded-full">Active</span>
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full text-white ${
+                      lec.status ? 'bg-green-500' : 'bg-red-500'
+                    }`}
+                  >
+                    {lec.status ? 'Active' : 'Inactive'}
+                  </span>
                 </td>
-                <td className="px-4 py-2 flex space-x-4">
-                  <button
-                    onClick={() => router.visit(route('lectures.edit', lec.lid))}
-                    className="text-blue-600 hover:text-blue-800 text-xl"
-                  >
-                    <MdModeEdit />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(lec.lid)}
-                    className="text-red-600 hover:text-red-800 text-xl"
-                  >
-                    <MdDelete />
+                <td className="px-4 py-2 flex">
+                  <Link as="button" href={route('lectures.edit', lec.lid)}>
+                    <FaEdit className="hover:text-red-700 text-2xl" />
+                  </Link>
+                  <button onClick={() => handleDelete(lec.lid)}>
+                    <MdDeleteForever className="hover:text-red-700 text-3xl" />
                   </button>
                 </td>
               </tr>
@@ -121,8 +129,8 @@ export default function Index() {
 
         <div className="fixed bottom-4 right-4">
           <button
+            className="hover:text-red-700 text-5xl bg-blue-900 text-red-500 font-bold"
             onClick={() => router.visit(route('lectures.create'))}
-            className="hover:text-red-700 text-5xl text-white"
           >
             <CgAddR />
           </button>

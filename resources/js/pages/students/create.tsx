@@ -17,18 +17,18 @@ export default function Create({...props}) {
         href: route('students.create'),
     },
 ];
-    
+
     const {data,setData,post,put}=useForm({
         sid:student?.sid||'',
-        sname:student?.sname||'',
+        name:student?.name||'',
         gender:student?.gender||'',
-        address:student?.address||'',       
+        address:student?.address||'',
         dob:student?.dob||'',
         school:student?.school||'',
-        parentName:student?.parentName||'',
-        tpNo:student?.tpNo||'',
+        parent:student?.parent||'',
+        phone:student?.phone||'',
         watsapp:student?.watsapp||'',
-        isActive:student?.isActive||true
+        status:student?.status||true
     })
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -57,7 +57,7 @@ export default function Create({...props}) {
           }
         })
         }
-        
+
 
     }
     return (
@@ -68,9 +68,9 @@ export default function Create({...props}) {
   <h2 className="text-3xl font-bold mb-8 text-center">Add New Student</h2>
 
   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-  
-   
-    <Input  type="text" name="sname" placeholder="Enter Student Name"  required={true} value={data.sname} onChange={(e)=>{setData('sname',e.target.value)}}/>
+
+
+    <Input  type="text" name="sname" placeholder="Enter Student Name"  required={true} value={data.name} onChange={(e)=>{setData('name',e.target.value)}}/>
     <div>
     <label className="block mb-2 text-sm font-medium text-white">Gender</label>
     <select
@@ -81,13 +81,13 @@ export default function Create({...props}) {
       <option value="">-- Select --</option>
       <option value="male">Male</option>
       <option value="female">Female</option>
-    </select>   
+    </select>
 
 
     </div>
-    
+
     <Input  type="text" name="s_address" placeholder="Enter Student Address" required={true} value={data.address} onChange={(e)=>{setData('address',e.target.value)}}/>
-   
+
     <Input  type="date" name="s_dob" required={true} value={data.dob} onChange={(e)=>{setData('dob',e.target.value)}}/>
     <div>
   <label className="block mb-2 text-sm font-medium text-white">Present School</label>
@@ -95,7 +95,7 @@ export default function Create({...props}) {
     name="s_school"
     className="w-full px-4 py-2 text-white bg-slate-800 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
     onChange={(e)=>{setData('school',e.target.value)}}
-  > 
+  >
     <option value="">-- Select --</option>
     {/*}
     {schools.map((school, index) => (
@@ -105,11 +105,11 @@ export default function Create({...props}) {
     ))}*/}
   </select>
 </div>
-    <Input  type="text" name="parent_name" placeholder="Enter Parent Name" required={true} value={data.parentName} onChange={(e)=>{setData('parentName',e.target.value)}}/>
-    <Input  type="text" name="tp_no" placeholder="0112345678" required={true} value={data.tpNo} onChange={(e)=>{setData('tpNo',e.target.value)}}/>
+    <Input  type="text" name="parent_name" placeholder="Enter Parent Name" required={true} value={data.parent} onChange={(e)=>{setData('parent',e.target.value)}}/>
+    <Input  type="text" name="tp_no" placeholder="0112345678" required={true} value={data.phone} onChange={(e)=>{setData('phone',e.target.value)}}/>
     <Input type="text" name="watsapp" placeholder="Watsapp number" required={true} value={data.watsapp} onChange={(e)=>{setData('watsapp',e.target.value)}}/>
       <div>
-      <Input type="checkbox" name="isActive" checked={data.isActive} onChange={(e)=>{setData('isActive',e.target.checked)}}/> Active
+      <Input type="checkbox" name="isActive" checked={data.status} onChange={(e)=>{setData('status',e.target.checked)}}/> Active
 
       </div>
   </div>
