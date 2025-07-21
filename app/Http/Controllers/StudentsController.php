@@ -85,7 +85,7 @@ class StudentsController extends Controller
         }
        
        if($student){
-           $student->sid=$request->sid;
+           
            $student->sname=$request->sname;
            $student->gender=$request->gender;
            $student->address=$request->address;
