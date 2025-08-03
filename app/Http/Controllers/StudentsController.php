@@ -42,9 +42,9 @@ class StudentsController extends Controller
 
 
         $request->merge([
-            'parent' => $request->parent ?? 'Unknown Parent',
-            'phone' => $request->phone,
-            'status' => $request->status,
+            'parentName' => $request->parent ?? 'Unknown Parent',
+            'tpNo' => $request->tpNo,
+            'isActive' => $request->isActive,
             'school' => $request->school ?? 'SCH000',
         ]);
 
@@ -96,15 +96,15 @@ class StudentsController extends Controller
 
         if ($student) {
             $student->sid = $request->sid;
-            $student->name = $request->name;
+            $student->sname = $request->sname;
             $student->gender = $request->gender;
             $student->address = $request->address;
             $student->dob = $request->dob;
             $student->school = $request->school;
-            $student->parent = $request->parent;
-            $student->phone = $request->phone;
+            $student->parentName = $request->parentName;
+            $student->tpNo = $request->tpNo;
             $student->watsapp = $request->watsapp;
-            $student->status = $request->status;
+            $student->isActive = $request->isActive;
             $student->save();
         }
 

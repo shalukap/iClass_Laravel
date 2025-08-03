@@ -1,10 +1,16 @@
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import Swal from 'sweetalert2';
 
-export default function Create({ classItem, isEdit }: { classItem?: any; isEdit?: boolean }) {
+export default function Create({ classItem, isEdit, classrooms, lectures }: {
+    classItem?: any;
+    isEdit?: boolean;
+    classrooms?: any[];
+    lectures?: any[];
+}) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: `${isEdit ? 'Edit' : 'Add'} Class`,
@@ -17,6 +23,10 @@ export default function Create({ classItem, isEdit }: { classItem?: any; isEdit?
         name: classItem?.name || '',
         time_start: classItem?.time_start || '',
         time_end: classItem?.time_end || '',
+        grade: classItem?.grade || 1,
+        classroom_id: classItem?.classroom_id || '',
+        lid: classItem?.lid || '',
+        fee: classItem?.fee || 2000.00,
     });
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -61,6 +71,69 @@ export default function Create({ classItem, isEdit }: { classItem?: any; isEdit?
                         </div>
 
                         <div className="flex flex-col">
+                            <label htmlFor="grade" className="mb-2 text-sm">
+                                Grade
+                            </label>
+                            <Select
+                                value={data.grade.toString()}
+                                onValueChange={(value) => setData('grade', parseInt(value))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select grade" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {Array.from({length: 13}, (_, i) => i + 1).map((grade) => (
+                                        <SelectItem key={grade} value={grade.toString()}>
+                                            Grade {grade}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="flex flex-col">
+                            <label htmlFor="classroom_id" className="mb-2 text-sm">
+                                Classroom
+                            </label>
+                            <Select
+                                value={data.classroom_id}
+                                onValueChange={(value) => setData('classroom_id', value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select classroom" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {classrooms?.map((classroom) => (
+                                        <SelectItem key={classroom.classroomId} value={classroom.classroomId}>
+                                            {classroom.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="flex flex-col">
+                            <label htmlFor="lid" className="mb-2 text-sm">
+                                Lecturer
+                            </label>
+                            <Select
+                                value={data.lid}
+                                onValueChange={(value) => setData('lid', value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select lecturer" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {lectures?.map((lecture) => (
+                                        <SelectItem key={lecture.lid} value={lecture.lid}>
+                                             {lecture.lec_name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="flex flex-col">
                             <label htmlFor="time_start" className="mb-2 text-sm">
                                 Start Time
                             </label>
@@ -85,6 +158,21 @@ export default function Create({ classItem, isEdit }: { classItem?: any; isEdit?
                                 required
                                 value={data.time_end}
                                 onChange={(e) => setData('time_end', e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex flex-col">
+                            <label htmlFor="fee" className="mb-2 text-sm">
+                                Class Fee
+                            </label>
+                            <Input
+                                type="number"
+                                name="fee"
+                                id="fee"
+                                placeholder="Enter class fee"
+                                required
+                                value={data.fee}
+                                onChange={(e) => setData('fee', parseFloat(e.target.value))}
                             />
                         </div>
                     </div>

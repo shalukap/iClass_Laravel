@@ -20,15 +20,15 @@ export default function Create({...props}) {
 
     const {data,setData,post,put}=useForm({
         sid:student?.sid||'',
-        name:student?.name||'',
+        sname:student?.sname||'',
         gender:student?.gender||'',
         address:student?.address||'',
         dob:student?.dob||'',
         school:student?.school||'',
-        parent:student?.parent||'',
-        phone:student?.phone||'',
+        parentName:student?.parentName||'',
+        tpNo:student?.tpNo||'',
         watsapp:student?.watsapp||'',
-        status:student?.status||true
+        isActive:student?.isActive||true
     })
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -45,7 +45,7 @@ export default function Create({...props}) {
           }
         })
         }else{
-          put(route('students.update',student?.id), {
+          put(route('students.update',student?.sid), {
           onSuccess: () => {
             Swal.fire({
                 position: "top-end",
@@ -70,7 +70,7 @@ export default function Create({...props}) {
   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
 
-    <Input  type="text" name="sname" placeholder="Enter Student Name"  required={true} value={data.name} onChange={(e)=>{setData('name',e.target.value)}}/>
+    <Input  type="text" name="sname" placeholder="Enter Student Name"  required={true} value={data.sname} onChange={(e)=>{setData('sname',e.target.value)}}/>
     <div>
     <label className="block mb-2 text-sm font-medium text-white">Gender</label>
     <select
@@ -105,11 +105,11 @@ export default function Create({...props}) {
     ))}*/}
   </select>
 </div>
-    <Input  type="text" name="parent_name" placeholder="Enter Parent Name" required={true} value={data.parent} onChange={(e)=>{setData('parent',e.target.value)}}/>
-    <Input  type="text" name="tp_no" placeholder="0112345678" required={true} value={data.phone} onChange={(e)=>{setData('phone',e.target.value)}}/>
+    <Input  type="text" name="parent_name" placeholder="Enter Parent Name" required={true} value={data.parentName} onChange={(e)=>{setData('parentName',e.target.value)}}/>
+    <Input  type="text" name="tp_no" placeholder="0112345678" required={true} value={data.tpNo} onChange={(e)=>{setData('tpNo',e.target.value)}}/>
     <Input type="text" name="watsapp" placeholder="Watsapp number" required={true} value={data.watsapp} onChange={(e)=>{setData('watsapp',e.target.value)}}/>
       <div>
-      <Input type="checkbox" name="isActive" checked={data.status} onChange={(e)=>{setData('status',e.target.checked)}}/> Active
+      <Input type="checkbox" name="isActive" checked={data.isActive} onChange={(e)=>{setData('isActive',e.target.checked)}}/> Active
 
       </div>
   </div>

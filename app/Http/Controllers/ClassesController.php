@@ -3,34 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classes;
+use App\Models\Classroom;
+use App\Models\Lectures;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ClassesController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $classes = Classes::latest()->get();
+        $classes = Classes::with(['classroom', 'lecturer'])->latest()->get();
 
         return Inertia::render('classes/index', [
             'classes' => $classes
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        return Inertia::render('classes/create');
+        $classrooms = Classroom::all();
+        $lectures = Lectures::all();
+
+        return Inertia::render('classes/create', [
+            'classrooms' => $classrooms,
+            'lectures' => $lectures,
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $last = Classes::orderBy('cid', 'desc')->first();
@@ -42,41 +41,44 @@ class ClassesController extends Controller
         $class->name = $request->name;
         $class->time_start = $request->time_start;
         $class->time_end = $request->time_end;
+        $class->grade = $request->grade;
+        $class->classroom_id = $request->classroom_id;
+        $class->lid = $request->lid;
+        $class->fee = $request->fee ?? 2000.00;
         $class->save();
 
         return redirect()->route('classes.index');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Classes $class)
     {
+        $classrooms = Classroom::all();
+        $lectures = Lectures::all();
+
         return Inertia::render('classes/create', [
             'classItem' => $class,
-            'isEdit' => true
+            'isEdit' => true,
+            'classrooms' => $classrooms,
+            'lectures' => $lectures,
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Classes $class)
     {
         if ($class) {
-            // $class->cid = $request->cid;
             $class->name = $request->name;
             $class->time_start = $request->time_start;
             $class->time_end = $request->time_end;
+            $class->grade = $request->grade;
+            $class->classroom_id = $request->classroom_id;
+            $class->lid = $request->lid;
+            $class->fee = $request->fee ?? 2000.00;
             $class->save();
         }
 
         return redirect()->route('classes.index');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Classes $class)
     {
         if ($class) {

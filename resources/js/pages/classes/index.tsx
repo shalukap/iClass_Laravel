@@ -21,6 +21,12 @@ interface ClassItem {
     name: string;
     time_start: string;
     time_end: string;
+    grade: number;
+    classroom_id: string;
+    lid: string;
+    fee: number;
+    classroom?: { name: string };
+    lecturer?: { lec_name: string };
 }
 
 function handleDelete(c: ClassItem) {
@@ -73,35 +79,44 @@ export default function Index({ classes: originalClasses }: { classes: ClassItem
                     />
                 </form>
 
-                <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow mt-4">
-                    <thead className="bg-slate-800 text-white">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-sm font-semibold">CID</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold">Name</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold">Start Time</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold">End Time</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 text-sm text-slate-800">
-                        {filteredClasses.map((c) => (
-                            <tr key={c.cid}>
-                                <td className="px-4 py-2">{c.cid}</td>
-                                <td className="px-4 py-2">{c.name}</td>
-                                <td className="px-4 py-2">{c.time_start}</td>
-                                <td className="px-4 py-2">{c.time_end}</td>
-                                <td className="px-4 py-2 flex gap-2">
-                                    <Link href={route('classes.edit', c.cid)}>
-                                        <FaEdit className="hover:text-red-700 text-xl" />
-                                    </Link>
-                                    <button onClick={() => handleDelete(c)}>
-                                        <MdDeleteForever className="hover:text-red-700 text-2xl" />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+
+<table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow mt-4">
+    <thead className="bg-slate-800 text-white">
+        <tr>
+            <th className="px-4 py-3 text-left text-sm font-semibold">CID</th>
+            <th className="px-4 py-3 text-left text-sm font-semibold">Name</th>
+            <th className="px-4 py-3 text-left text-sm font-semibold">Grade</th>
+            <th className="px-4 py-3 text-left text-sm font-semibold">Classroom</th>
+            <th className="px-4 py-3 text-left text-sm font-semibold">Lecturer</th>
+            <th className="px-4 py-3 text-left text-sm font-semibold">Start Time</th>
+            <th className="px-4 py-3 text-left text-sm font-semibold">End Time</th>
+            <th className="px-4 py-3 text-left text-sm font-semibold">Fee</th>
+            <th className="px-4 py-3 text-left text-sm font-semibold">Actions</th>
+        </tr>
+    </thead>
+    <tbody className="divide-y divide-gray-200 text-sm text-slate-800">
+        {filteredClasses.map((c) => (
+            <tr key={c.cid}>
+                <td className="px-4 py-2">{c.cid}</td>
+                <td className="px-4 py-2">{c.name}</td>
+                <td className="px-4 py-2">Grade {c.grade}</td>
+                <td className="px-4 py-2">{c.classroom?.name || '-'}</td>
+                <td className="px-4 py-2">{c.lecturer?.lec_name || '-'}</td>
+                <td className="px-4 py-2">{c.time_start}</td>
+                <td className="px-4 py-2">{c.time_end}</td>
+                <td className="px-4 py-2">${c.fee.toFixed(2)}</td>
+                <td className="px-4 py-2 flex gap-2">
+                    <Link href={route('classes.edit', c.cid)}>
+                        <FaEdit className="hover:text-red-700 text-xl" />
+                    </Link>
+                    <button onClick={() => handleDelete(c)}>
+                        <MdDeleteForever className="hover:text-red-700 text-2xl" />
+                    </button>
+                </td>
+            </tr>
+        ))}
+    </tbody>
+</table>
 
                 <div className="fixed bottom-4 right-4">
                     <button

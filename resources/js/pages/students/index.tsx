@@ -18,16 +18,16 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface Student {
     id: number;
     sid: string;
-    name: string;
+    sname: string;
     image: string;
     address: string;
     dob: string;
     gender: string;
     school: string;
-    parent: string;
-    phone: string;
+    parentName: string;
+    tpNo: string;
     watsapp: string;
-    status: boolean;
+    isActive: boolean;
 }
 
 function handleDelete(id:number) {
@@ -67,7 +67,7 @@ export default function Index({students:originalStudents}: {students:Student[]})
 
 
             (student.sid?.toLowerCase()||'').includes(searchQuery) ||
-            (student.name?.toLowerCase()||'').includes(searchQuery) ||
+            (student.sname?.toLowerCase()||'').includes(searchQuery) ||
             (student.school?.toLowerCase()||'').includes(searchQuery)
           );
 
@@ -121,11 +121,11 @@ export default function Index({students:originalStudents}: {students:Student[]})
   {filteredStudents.map((s) => (
     <tr key={s.id}>
       <td className="px-4 py-2">{s.sid}</td>
-      <td className="px-4 py-2">{s.name}</td>
+      <td className="px-4 py-2">{s.sname}</td>
       <td className="px-4 py-2">
         <img
           src={s.image}
-          alt={s.name}
+          alt={s.sname}
           className="w-10 h-10 rounded-full object-cover"
         />
       </td>
@@ -133,16 +133,16 @@ export default function Index({students:originalStudents}: {students:Student[]})
 
       <td className="px-4 py-2">{new Date(s.dob).toLocaleDateString()}</td>
       <td className="px-4 py-2">{s.school}</td>
-      <td className="px-4 py-2">{s.parent}</td>
-      <td className="px-4 py-2">{s.phone}</td>
+      <td className="px-4 py-2">{s.parentName}</td>
+      <td className="px-4 py-2">{s.tpNo}</td>
       <td className="px-4 py-2">{s.watsapp}</td>
       <td className="px-4 py-2" >
-        <span className={`inline-block px-3 py-1 rounded-full text-white ${s.status ? 'bg-green-500' : 'bg-red-500'}`}>
-          {s.status?'Active':'Inactive'}
+        <span className={`inline-block px-3 py-1 rounded-full text-white ${s.isActive ? 'bg-green-500' : 'bg-red-500'}`}>
+          {s.isActive?'Active':'Inactive'}
         </span>
       </td>
       <td className='px-4 py-2 flex'>
-        <td className="px-4 py-2 flex justify-center items-center"><Link as ="button" href={route('students.edit',s.id)}><FaEdit className='hover:text-red-700 text-2xl'/></Link>
+        <td className="px-4 py-2 flex justify-center items-center"><Link as ="button" href={route('students.edit',s.sid)}><FaEdit className='hover:text-red-700 text-2xl'/></Link>
         <button onClick={()=>handleDelete(s.id)}><MdDeleteForever className='hover:text-red-700 text-3xl'/></button></td>
       </td>
 
