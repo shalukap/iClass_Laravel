@@ -55,7 +55,7 @@ const mainNavItems: NavItem[] = [
         icon: Folder,
     },
     {
-        title: 'Enrollments',
+        title: 'Class Enrollments',
         href: '/enrollments',
         icon: User2Icon,
     },
