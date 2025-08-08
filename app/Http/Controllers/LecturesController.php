@@ -23,6 +23,11 @@ class LecturesController extends Controller
             'whatsapp_no',
             'lec_email',
             'status',
+            'is_employed',
+            'bank_account',
+            'bank_name',
+            'bank_branch',
+            'vehicle_no',
         ]);
 
         return Inertia::render('lectures/index', [
@@ -56,6 +61,10 @@ class LecturesController extends Controller
             'whatsapp_no' => 'required|string|max:20',
             'lec_email' => 'required|email|max:255',
             'status' => 'boolean',
+            'bank_account' => 'nullable|string|max:20',
+            'bank_name' => 'nullable|string|max:50',
+            'bank_branch' => 'nullable|string|max:50',
+            'vehicle_no' => 'nullable|string|max:20',
         ]);
 
         $lecture = new Lectures();
@@ -68,6 +77,11 @@ class LecturesController extends Controller
         $lecture->whatsapp_no = $request->whatsapp_no;
         $lecture->lec_email = $request->lec_email;
         $lecture->status = $request->status ?? true;
+        $lecture->is_employed = $request->is_employed ?? false;
+        $lecture->bank_account = $request->bank_account;
+        $lecture->bank_name = $request->bank_name;
+        $lecture->bank_branch = $request->bank_branch;
+        $lecture->vehicle_no = $request->vehicle_no;
         $lecture->save();
 
         return redirect()->route('lectures.index');
@@ -97,6 +111,11 @@ class LecturesController extends Controller
                 'whatsapp_no',
                 'lec_email',
                 'status',
+                'is_employed',
+                'bank_account',
+                'bank_name',
+                'bank_branch',
+                'vehicle_no',
             ]),
             'isEdit' => true,
         ]);
@@ -116,6 +135,10 @@ class LecturesController extends Controller
             'whatsapp_no' => 'required|string|max:20',
             'lec_email' => 'required|email|max:255',
             'status' => 'boolean',
+            'bank_account' => 'nullable|string|max:20',
+            'bank_name' => 'nullable|string|max:50',
+            'bank_branch' => 'nullable|string|max:50',
+            'vehicle_no' => 'nullable|string|max:20',
         ]);
 
         if ($lecture) {
@@ -127,6 +150,11 @@ class LecturesController extends Controller
             $lecture->whatsapp_no = $request->whatsapp_no;
             $lecture->lec_email = $request->lec_email;
             $lecture->status = $request->status;
+            $lecture->is_employed = $request->is_employed;
+            $lecture->bank_account = $request->bank_account;
+            $lecture->bank_name = $request->bank_name;
+            $lecture->bank_branch = $request->bank_branch;
+            $lecture->vehicle_no = $request->vehicle_no;
             $lecture->save();
         }
 

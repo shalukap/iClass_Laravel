@@ -18,7 +18,15 @@ class Classes extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'name', 'time_start', 'time_end', 'grade', 'classroom_id', 'lid', 'fee'
+        'name',
+        'time_start',
+        'time_end',
+        'grade',
+        'classroom_id',
+        'lid',
+        'fee',
+        'medium',
+        'syllabus'
     ];
 
     protected $attributes = [
@@ -35,8 +43,31 @@ class Classes extends Model
     }
 
     // Relationship to Lecture
+    public function lectures()
+    {
+        return $this->belongsToMany(
+            Lectures::class,
+            'lecture_class',
+            'cid',
+            'lid'
+        )
+            ->withTimestamps();
+    }
     public function lecturer()
     {
         return $this->belongsTo(Lectures::class, 'lid', 'lid');
     }
+
+
+    public function lecturePayments()
+    {
+        return $this->hasMany(LecturePayment::class, 'cid', 'cid');
+    }
+    public function students()
+    {
+        return $this->belongsToMany(Students::class, 'class_student', 'cid', 'sid')
+            ->withPivot('due_amount')
+            ->withTimestamps();
+    }
 }
+

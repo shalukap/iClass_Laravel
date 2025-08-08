@@ -11,36 +11,39 @@ use Inertia\Inertia;
 
 
 class EnrollmentController extends Controller
-
 {
 
     public function index()
-{
-    return Inertia::render('enrollments/enrollments');
-}
+    {
+        return Inertia::render('enrollments/enrollments');
+    }
 
     public function createEnrollment()
     {
-        $classes = Classes::all();
+        $classes = Classes::select('cid', 'name', 'medium', 'syllabus')->get();
         return inertia('enrollments/enrollments', [
             'allClasses' => $classes
         ]);
     }
 
-public function searchStudent(Request $request)
-{
-    $sid = trim($request->query('sid'));
-    $student = Students::with('classes')->where('sid', $sid)->first();
+    public function searchStudent(Request $request)
+    {
+        $sid = trim($request->query('sid'));
+        $student = Students::with([
+            'classes' => function ($query) {
+                $query->select('classes.cid', 'classes.name', 'classes.medium', 'classes.syllabus');
+            }
+        ])->where('sid', $sid)->first();
 
-    if (!$student) {
-        return response()->json(['message' => 'Student not found'], 404);
+        if (!$student) {
+            return response()->json(['message' => 'Student not found'], 404);
+        }
+
+        return response()->json([
+            'student' => $student,
+            'allClasses' => Classes::select('cid', 'name', 'medium', 'syllabus')->get(),
+        ]);
     }
-
-    return response()->json([
-        'student' => $student,
-        'allClasses' => Classes::all(),
-    ]);
-}
 
 
 

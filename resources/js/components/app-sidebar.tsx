@@ -40,6 +40,11 @@ const mainNavItems: NavItem[] = [
         icon: Folder,
     },
     {
+        title: 'Lecture Payments',
+        href: '/lecture-payments',
+        icon: Folder,
+    },
+    {
         title: 'Teachers',
         href: '/teachers',
         icon: School,
@@ -52,6 +57,11 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Enrollments',
         href: '/enrollments',
+        icon: User2Icon,
+    },
+    {
+        title: 'Lecture Enrollments',
+        href: '/lecture-payments/classes',
         icon: User2Icon,
     },
 ];

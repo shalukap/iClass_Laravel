@@ -22,6 +22,11 @@ class Lectures extends Model
         'whatsapp_no',
         'lec_email',
         'status',
+        'is_employed',
+        'bank_account',
+        'bank_name',
+        'bank_branch',
+        'vehicle_no',
     ];
     protected $casts = [
         'lid' => 'string',
@@ -33,5 +38,22 @@ class Lectures extends Model
         'whatsapp_no' => 'string',
         'lec_email' => 'string',
         'status' => 'boolean',
+        'is_employed' => 'boolean',
     ];
+
+    public function classes()
+    {
+        return $this->belongsToMany(
+            Classes::class,
+            'lecture_class',
+            'lid',
+            'cid'
+        )
+            ->withTimestamps();
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(LecturePayment::class, 'lid', 'lid');
+    }
 }

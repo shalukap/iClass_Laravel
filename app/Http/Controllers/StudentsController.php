@@ -11,9 +11,11 @@ class StudentsController extends Controller
 {
     public function index()
     {
-         $students = Students::with(['schoolDetails' => function($query) {
-        $query->select('schoolId', 'name');
-    }])->get();
+        $students = Students::with([
+            'schoolDetails' => function ($query) {
+                $query->select('schoolId', 'name');
+            }
+        ])->get();
 
         return Inertia::render('students/index', [
             'students' => $students
@@ -26,21 +28,21 @@ class StudentsController extends Controller
 
         return Inertia::render('students/create', [
             'schools' => $schools,
-            'isEdit'  => false
+            'isEdit' => false
         ]);
     }
 
     public function store(Request $request)
     {
-        $last   = Students::orderBy('sid', 'desc')->first();
+        $last = Students::orderBy('sid', 'desc')->first();
         $number = $last ? (substr($last->sid, 3) + 1) : 1;
-        $sid    = 'STU' . sprintf('%06d', $number);
+        $sid = 'STU' . sprintf('%06d', $number);
 
         $request->merge([
-            'sid'        => $sid,
+            'sid' => $sid,
             'parentName' => $request->parentName ?? 'Unknown Parent',
-            'tpNo'       => $request->tpNo,
-            'isActive'   => $request->isActive,
+            'tpNo' => $request->tpNo,
+            'isActive' => $request->isActive,
             'schoolId' => $request->school,
         ]);
 
@@ -63,11 +65,11 @@ class StudentsController extends Controller
 
         return Inertia::render('students/create', [
             'student' => [
-            ...$student->toArray(),
-            'school' => $student->schoolId
-        ],
+                ...$student->toArray(),
+                'school' => $student->schoolId
+            ],
             'schools' => $schools,
-            'isEdit'  => true
+            'isEdit' => true
         ]);
     }
 
@@ -79,15 +81,15 @@ class StudentsController extends Controller
             $student->image = $filename;
         }
 
-        $student->sname      = $request->sname;
-        $student->gender     = $request->gender;
-        $student->address    = $request->address;
-        $student->dob        = $request->dob;
+        $student->sname = $request->sname;
+        $student->gender = $request->gender;
+        $student->address = $request->address;
+        $student->dob = $request->dob;
         $student->schoolId = $request->school;
         $student->parentName = $request->parentName;
-        $student->tpNo       = $request->tpNo;
-        $student->watsapp    = $request->watsapp;
-        $student->isActive   = $request->isActive;
+        $student->tpNo = $request->tpNo;
+        $student->watsapp = $request->watsapp;
+        $student->isActive = $request->isActive;
         $student->save();
 
         return redirect()->route('students.index');

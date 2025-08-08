@@ -12,4 +12,10 @@ class Schools extends Model
     protected $keyType = 'string';
 
     protected $fillable = ['schoolId', 'name'];
+    public function students()
+    {
+        return $this->hasMany(Students::class, 'schoolId', 'schoolId');
+    }
+
 }
+

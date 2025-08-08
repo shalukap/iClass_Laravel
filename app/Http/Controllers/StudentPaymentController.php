@@ -64,16 +64,16 @@ class StudentPaymentController extends Controller
         ]);
     }
 
-public function store(Request $request)
-{
-    $sid = $request->input('sid');
+    public function store(Request $request)
+    {
+        $sid = $request->input('sid');
 
-    $request->validate([
-        'cid' => 'required|string',
-        'year' => 'required|integer|min:2000|max:2100',
-        'month' => 'required|integer|min:1|max:12',
-        'amount' => 'required|numeric|min:0',
-    ]);
+        $request->validate([
+            'cid' => 'required|string',
+            'year' => 'required|integer|min:2000|max:2100',
+            'month' => 'required|integer|min:1|max:12',
+            'amount' => 'required|numeric|min:0',
+        ]);
 
         $existingPayment = StudentPayment::where([
             'sid' => $sid,
@@ -89,7 +89,7 @@ public function store(Request $request)
         }
 
         $last = StudentPayment::orderBy('pid', 'desc')->first();
-        $number = $last ? (int)(substr($last->pid, 3)) + 1 : 1;
+        $number = $last ? (int) (substr($last->pid, 3)) + 1 : 1;
         $pid = 'PAY' . str_pad($number, 6, '0', STR_PAD_LEFT);
 
         StudentPayment::create([

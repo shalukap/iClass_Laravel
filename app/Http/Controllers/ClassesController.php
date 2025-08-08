@@ -45,7 +45,14 @@ class ClassesController extends Controller
         $class->classroom_id = $request->classroom_id;
         $class->lid = $request->lid;
         $class->fee = $request->fee ?? 2000.00;
+        $class->medium = $request->medium ?? 'english';
+        $class->syllabus = $request->syllabus ?? 'local';
         $class->save();
+
+        $lecture = Lectures::find($request->lid);
+        if ($lecture) {
+            $lecture->classes()->attach($class->cid);
+        }
 
         return redirect()->route('classes.index');
     }
@@ -73,6 +80,8 @@ class ClassesController extends Controller
             $class->classroom_id = $request->classroom_id;
             $class->lid = $request->lid;
             $class->fee = $request->fee ?? 2000.00;
+            $class->medium = $request->medium;
+            $class->syllabus = $request->syllabus;
             $class->save();
         }
 

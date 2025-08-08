@@ -1,20 +1,23 @@
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
+import axios from 'axios';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
-import axios from 'axios';
 
 interface Student {
     sid: string;
     sname: string;
+
     classes: Class[];
 }
 
 interface Class {
     cid: string;
     name: string;
+    medium: string;
+    syllabus: string;
 }
 
 export default function Enroll({ allClasses: initialClasses = [] }: { allClasses?: Class[] }) {
@@ -66,8 +69,8 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
                     timer: 1500,
                 });
                 reset();
-            setStudent(null);
-            setData('sid', '');
+                setStudent(null);
+                setData('sid', '');
             },
             onError: () => {
                 Swal.fire({
@@ -79,10 +82,8 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
         });
     };
 
-    const availableClasses = student && Array.isArray(allClasses)
-        ? allClasses.filter(cls => !student.classes.some(enrolled => enrolled.cid === cls.cid))
-        : [];
-
+    const availableClasses =
+        student && Array.isArray(allClasses) ? allClasses.filter((cls) => !student.classes.some((enrolled) => enrolled.cid === cls.cid)) : [];
 
     console.log('allClasses:', allClasses);
     console.log('student:', student);
@@ -91,8 +92,8 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Enroll Student" />
-            <div className="max-w-full mx-auto bg-slate-800 p-8 rounded-xl shadow-lg text-white">
-                <h2 className="text-2xl font-semibold mb-6 text-center">Enroll Student to Class</h2>
+            <div className="mx-auto max-w-full rounded-xl bg-slate-800 p-8 text-white shadow-lg">
+                <h2 className="mb-6 text-center text-2xl font-semibold">Enroll Student to Class</h2>
 
                 <form onSubmit={handleSearch} className="mb-8">
                     <div className="flex gap-4">
@@ -107,7 +108,7 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
                         />
                         <button
                             type="submit"
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-all disabled:opacity-50"
+                            className="rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white transition-all hover:bg-blue-700 disabled:opacity-50"
                             disabled={loading}
                         >
                             {loading ? 'Searching...' : 'Search'}
@@ -116,22 +117,36 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
                 </form>
 
                 {student && (
-                    <div className="mb-8 p-4 bg-slate-700 rounded-lg">
-                        <h3 className="text-xl font-semibold mb-4">Student Information</h3>
-                        <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="mb-8 rounded-lg bg-slate-700 p-4">
+                        <h3 className="mb-4 text-xl font-semibold">Student Information</h3>
+                        <div className="mb-6 grid grid-cols-2 gap-4">
                             <div>
-                                <p><span className="font-semibold">SID:</span> {student.sid}</p>
-                                <p><span className="font-semibold">Name:</span> {student.sname}</p>
+                                <p>
+                                    <span className="font-semibold">SID:</span> {student.sid}
+                                </p>
+                                <p>
+                                    <span className="font-semibold">Name:</span> {student.sname}
+                                </p>
                             </div>
                         </div>
 
-                        <h3 className="text-xl font-semibold mb-4">Current Enrollments</h3>
+                        <h3 className="mb-4 text-xl font-semibold">Current Enrollments</h3>
                         {student.classes.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {student.classes.map(cls => (
-                                    <div key={cls.cid} className="bg-slate-600 p-3 rounded-lg">
-                                        <p><span className="font-semibold">Class:</span> {cls.name}</p>
-                                        <p><span className="font-semibold">ID:</span> {cls.cid}</p>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {student.classes.map((cls) => (
+                                    <div key={cls.cid} className="rounded-lg bg-slate-600 p-3">
+                                        <p>
+                                            <span className="font-semibold">Class:</span> {cls.name}
+                                        </p>
+                                        <p>
+                                            <span className="font-semibold">ID:</span> {cls.cid}
+                                        </p>
+                                        <p>
+                                            <span className="font-semibold">Medium:</span> {cls.medium}
+                                        </p>
+                                        <p>
+                                            <span className="font-semibold">Syllabus:</span> {cls.syllabus}
+                                        </p>
                                     </div>
                                 ))}
                             </div>
@@ -143,30 +158,28 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
 
                 {student && availableClasses.length > 0 && (
                     <form onSubmit={handleEnroll} className="mt-6">
-                        <h3 className="text-xl font-semibold mb-4">Enroll to New Class</h3>
-                        <div className="flex flex-col md:flex-row gap-4 items-end">
-                            <div className="flex-1 w-full">
-                                <label className="block mb-2 text-sm font-medium text-white">
-                                    Available Classes
-                                </label>
+                        <h3 className="mb-4 text-xl font-semibold">Enroll to New Class</h3>
+                        <div className="flex flex-col items-end gap-4 md:flex-row">
+                            <div className="w-full flex-1">
+                                <label className="mb-2 block text-sm font-medium text-white">Available Classes</label>
                                 <select
                                     name="cid"
-                                    className="w-full px-4 py-2 text-white bg-slate-800 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full rounded-md border border-gray-300 bg-slate-800 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                     value={data.cid}
                                     onChange={(e) => setData('cid', e.target.value)}
                                     required
                                 >
                                     <option value="">-- Select Class --</option>
-                                    {availableClasses.map(cls => (
+                                    {availableClasses.map((cls) => (
                                         <option key={cls.cid} value={cls.cid}>
-                                            {cls.name} ({cls.cid})
+                                            {cls.name} ({cls.cid}) - {cls.medium} - {cls.syllabus}
                                         </option>
                                     ))}
                                 </select>
                             </div>
                             <button
                                 type="submit"
-                                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-all w-full md:w-auto"
+                                className="w-full rounded-lg bg-green-600 px-6 py-2 font-semibold text-white transition-all hover:bg-green-700 md:w-auto"
                             >
                                 Enroll Student
                             </button>
@@ -175,13 +188,13 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
                 )}
 
                 {student && availableClasses.length === 0 && allClasses.length > 0 && (
-                    <div className="p-4 bg-slate-700 rounded-lg mt-6">
+                    <div className="mt-6 rounded-lg bg-slate-700 p-4">
                         <p className="text-gray-400 italic">This student is already enrolled in all available classes.</p>
                     </div>
                 )}
 
                 {student && allClasses.length === 0 && (
-                    <div className="p-4 bg-slate-700 rounded-lg mt-6">
+                    <div className="mt-6 rounded-lg bg-slate-700 p-4">
                         <p className="text-gray-400 italic">No classes are available in the system.</p>
                     </div>
                 )}

@@ -5,7 +5,12 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import Swal from 'sweetalert2';
 
-export default function Create({ classItem, isEdit, classrooms, lectures }: {
+export default function Create({
+    classItem,
+    isEdit,
+    classrooms,
+    lectures,
+}: {
     classItem?: any;
     isEdit?: boolean;
     classrooms?: any[];
@@ -26,7 +31,9 @@ export default function Create({ classItem, isEdit, classrooms, lectures }: {
         grade: classItem?.grade || 1,
         classroom_id: classItem?.classroom_id || '',
         lid: classItem?.lid || '',
-        fee: classItem?.fee || 2000.00,
+        fee: classItem?.fee || 2000.0,
+        medium: classItem?.medium || 'english',
+        syllabus: classItem?.syllabus || 'local',
     });
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -74,15 +81,12 @@ export default function Create({ classItem, isEdit, classrooms, lectures }: {
                             <label htmlFor="grade" className="mb-2 text-sm">
                                 Grade
                             </label>
-                            <Select
-                                value={data.grade.toString()}
-                                onValueChange={(value) => setData('grade', parseInt(value))}
-                            >
+                            <Select value={data.grade.toString()} onValueChange={(value) => setData('grade', parseInt(value))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select grade" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {Array.from({length: 13}, (_, i) => i + 1).map((grade) => (
+                                    {Array.from({ length: 13 }, (_, i) => i + 1).map((grade) => (
                                         <SelectItem key={grade} value={grade.toString()}>
                                             Grade {grade}
                                         </SelectItem>
@@ -95,10 +99,7 @@ export default function Create({ classItem, isEdit, classrooms, lectures }: {
                             <label htmlFor="classroom_id" className="mb-2 text-sm">
                                 Classroom
                             </label>
-                            <Select
-                                value={data.classroom_id}
-                                onValueChange={(value) => setData('classroom_id', value)}
-                            >
+                            <Select value={data.classroom_id} onValueChange={(value) => setData('classroom_id', value)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select classroom" />
                                 </SelectTrigger>
@@ -116,17 +117,14 @@ export default function Create({ classItem, isEdit, classrooms, lectures }: {
                             <label htmlFor="lid" className="mb-2 text-sm">
                                 Lecturer
                             </label>
-                            <Select
-                                value={data.lid}
-                                onValueChange={(value) => setData('lid', value)}
-                            >
+                            <Select value={data.lid} onValueChange={(value) => setData('lid', value)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select lecturer" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {lectures?.map((lecture) => (
                                         <SelectItem key={lecture.lid} value={lecture.lid}>
-                                             {lecture.lec_name}
+                                            {lecture.lec_name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -174,6 +172,37 @@ export default function Create({ classItem, isEdit, classrooms, lectures }: {
                                 value={data.fee}
                                 onChange={(e) => setData('fee', parseFloat(e.target.value))}
                             />
+                        </div>
+
+                        <div className="flex flex-col">
+                            <label htmlFor="medium" className="mb-2 text-sm">
+                                Medium
+                            </label>
+                            <Select value={data.medium} onValueChange={(value) => setData('medium', value)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select medium" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="english">English</SelectItem>
+                                    <SelectItem value="sinhala">Sinhala</SelectItem>
+                                    <SelectItem value="tamil">Tamil</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="flex flex-col">
+                            <label htmlFor="syllabus" className="mb-2 text-sm">
+                                Syllabus
+                            </label>
+                            <Select value={data.syllabus} onValueChange={(value) => setData('syllabus', value)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select syllabus" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="local">Local Syllabus</SelectItem>
+                                    <SelectItem value="london">London Syllabus</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 
