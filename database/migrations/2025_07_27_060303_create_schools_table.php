@@ -12,8 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('schools', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->string('schoolId')->primary(); // Custom string primary key
+            $table->string('name');                // School name
+            $table->timestamps();                  // created_at, updated_at
         });
     }
 

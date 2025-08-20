@@ -1,99 +1,99 @@
-// resources/ts/Pages/School/Index.tsx
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { FaEdit } from 'react-icons/fa';
 import { CgAddR } from 'react-icons/cg';
-import { MdDelete, MdModeEdit } from 'react-icons/md';
+import { MdDeleteForever } from 'react-icons/md';
+import Swal from 'sweetalert2';
 
 interface School {
     schoolId: string;
     name: string;
 }
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Schools', href: '/schools' }];
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Schools',
+        href: '/schools',
+    },
+];
 
-export default function Index() {
-    const [schools, setSchools] = useState<School[]>([]);
+function handleDelete(id: string) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(route('schools.destroy', id), {
+                onSuccess: () => {
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: 'Your school has been deleted.',
+                        icon: 'success',
+                    });
+                },
+            });
+        }
+    });
+}
+
+export default function Index({ schools: originalSchools }: { schools: School[] }) {
+    const [searchSchool, setSearchSchool] = useState('');
+    const [filteredSchools, setFilteredSchools] = useState(originalSchools);
 
     useEffect(() => {
-        router.visit(route('schools.index'), {
-            only: ['schools'], // optional: if you pass via props from Laravel
-            onSuccess: (page) => {
-                if (page.props.schools) setSchools(page.props.schools as School[]);
-            },
-        });
-    }, []);
-
-    const handleDelete = async (id: string) => {
-        router.delete(route('schools.destroy', id), {
-            onSuccess: () => setSchools(schools.filter((s) => s.schoolId !== id)),
-        });
-    };
+        const searchQuery = searchSchool.toLowerCase();
+        const filtered = originalSchools.filter(
+            (school) =>
+                (school.schoolId?.toLowerCase() || '').includes(searchQuery) ||
+                (school.name?.toLowerCase() || '').includes(searchQuery)
+        );
+        setFilteredSchools(filtered);
+    }, [searchSchool, originalSchools]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Schools" />
-            <div className="h-full w-full overflow-x-auto p-4">
-                <form className="mx-auto max-w-4xl rounded-xl bg-slate-800 p-8 text-white shadow-lg">
-                    <h2 className="mb-6 text-center text-2xl font-semibold">School Info</h2>
-
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                        <div>
-                            <label htmlFor="schoolId" className="mb-2 block text-sm font-medium">
-                                School ID
-                            </label>
-                            <input
-                                type="text"
-                                id="schoolId"
-                                className="w-full rounded-md border border-gray-300 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                placeholder="Enter schoolId"
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="name" className="mb-2 block text-sm font-medium">
-                                Name
-                            </label>
-                            <input
-                                type="text"
-                                id="name"
-                                className="w-full rounded-md border border-gray-300 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                placeholder="Enter Name"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="mt-8 text-center">
-                        <button type="submit" className="rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white transition-all hover:bg-blue-700">
-                            Submit
-                        </button>
+            <div className="w-full h-full overflow-x-auto p-4">
+                <form className="max-w-full mx-auto bg-slate-800 p-8 rounded-xl shadow-lg text-white">
+                    <h2 className="text-2xl font-semibold mb-6 text-center">School Info</h2>
+                    <div>
+                        <input
+                            type="text"
+                            id="search"
+                            className="w-full px-4 py-2 text-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Search School ID, Name"
+                            value={searchSchool}
+                            onChange={(e) => setSearchSchool(e.target.value)}
+                        />
                     </div>
                 </form>
 
-                <h2 className="my-6 text-center text-2xl font-semibold text-white">Schools</h2>
-                <table className="min-w-full divide-y divide-gray-200 rounded-lg bg-white shadow">
-                    <thead className="bg-slate-800 text-white">
+                <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow">
+                    <thead className="bg-slate-800 text-white border-white">
                         <tr>
                             <th className="px-4 py-3 text-left text-sm font-semibold">School ID</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold">Name</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold">Action</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200 text-sm">
-                        {schools.map((school) => (
+                    <tbody className="divide-y divide-gray-200 text-sm text-slate-800">
+                        {filteredSchools.map((school) => (
                             <tr key={school.schoolId}>
                                 <td className="px-4 py-2">{school.schoolId}</td>
                                 <td className="px-4 py-2">{school.name}</td>
-                                <td className="flex space-x-4 px-4 py-2">
-                                    <button
-                                        onClick={() => router.visit(route('schools.edit', school.schoolId))}
-                                        className="text-xl text-blue-600 hover:text-blue-800"
-                                    >
-                                        <MdModeEdit />
-                                    </button>
-                                    <button onClick={() => handleDelete(school.schoolId)} className="text-xl text-red-600 hover:text-red-800">
-                                        <MdDelete />
+                                <td className="px-4 py-2 flex">
+                                    <Link as="button" href={route('schools.edit', school.schoolId)}>
+                                        <FaEdit className="hover:text-red-700 text-2xl" />
+                                    </Link>
+                                    <button onClick={() => handleDelete(school.schoolId)}>
+                                        <MdDeleteForever className="hover:text-red-700 text-3xl" />
                                     </button>
                                 </td>
                             </tr>
@@ -101,8 +101,11 @@ export default function Index() {
                     </tbody>
                 </table>
 
-                <div className="fixed right-4 bottom-4">
-                    <button onClick={() => router.visit(route('schools.create'))} className="text-5xl text-white hover:text-red-700">
+                <div className="fixed bottom-4 right-4">
+                    <button
+                        className="hover:text-red-700 text-5xl bg-blue-900 text-red-500 font-bold"
+                        onClick={() => router.visit(route('schools.create'))}
+                    >
                         <CgAddR />
                     </button>
                 </div>

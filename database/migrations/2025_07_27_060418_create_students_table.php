@@ -12,18 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('students', function (Blueprint $table) {
-            $table->id();
-            $table->string('sid');   
-            $table->string('name');
-            $table->string('image');
-            $table->string('address');            
+            $table->id('sid'); // student ID (Primary Key)
+            $table->string('sname'); // student name
+            $table->enum('gender', ['male', 'female']);
+            $table->string('address');
             $table->date('dob');
-            $table->string('gender');
-            $table->string('school');
-            $table->string('parent');
-            $table->string('phone');
+
+            // Assuming 'school' is a foreign key to a schools table
+            $table->unsignedBigInteger('school')->nullable();
+            $table->foreign('school')->references('id')->on('schools')->onDelete('set null');
+
+            $table->string('parentName');
+            $table->string('tpNo');
             $table->string('watsapp');
-            $table->string('status');
+            $table->boolean('isActive')->default(true);
+
             $table->timestamps();
         });
     }
