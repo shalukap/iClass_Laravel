@@ -70,11 +70,11 @@ export default function Index({ students = [] }: { students?: Student[] }) {
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   </td>
-                  <td className="px-4 py-2">${student.due_amount?.toFixed(2) ?? '0.00'}</td>
+                  <td className="px-4 py-2"> Rs. {student.due_amount?.toFixed(2) ?? '0.00'}</td>
                   <td className="px-4 py-2">
                     <Link
                       as="button"
-                      href={route('student-payments.create') + `?sid=${student.sid}`}
+                      href={route('student-payments.create') + `?sid= ${student.sid}`}
                       className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2"
                     >
                       <MdPayment className="text-lg" />

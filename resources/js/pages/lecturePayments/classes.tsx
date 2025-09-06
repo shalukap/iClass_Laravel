@@ -1,4 +1,3 @@
-// resources/js/pages/lecture-payments/classes.tsx
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -13,6 +12,11 @@ interface Lecture {
     classes: Class[];
 }
 
+interface LectureBasic {
+    lid: string;
+    lec_name: string;
+}
+
 interface Class {
     cid: string;
     name: string;
@@ -22,6 +26,7 @@ interface Class {
     total_earned: number;
     total_paid: number;
     due_amount: number;
+    overpaid_amount: number;
 }
 
 interface Student {
@@ -40,28 +45,111 @@ export default function LectureClasses({ allClasses: initialClasses = [] }: { al
     ];
 
     const [lecture, setLecture] = useState<Lecture | null>(null);
+    const [matchedLectures, setMatchedLectures] = useState<LectureBasic[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(false);
+    const [searchType, setSearchType] = useState<'id' | 'name'>('id');
+    const [selectedLectureId, setSelectedLectureId] = useState('');
 
     const { data, setData } = useForm({
-        lid: '',
+        searchTerm: '',
     });
 
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const response = await axios.get(`/lecture-payments/search?lid=${data.lid}`);
-            if (response.data.lecture) {
-                setLecture(response.data.lecture);
-                setStudents(response.data.students || []);
-            } else {
-                Swal.fire('Error', 'Lecture not found', 'error');
-            }
-        } catch (error) {
-            Swal.fire('Error', (error as any).response?.data?.message || 'Lecture not found', 'error');
-        } finally {
+const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMatchedLectures([]);
+    setLecture(null);
+    setStudents([]);
+    setSelectedLectureId('');
+
+    try {
+        // Prepare search parameters only if they have value
+        const params: any = {};
+        const term = data.searchTerm.trim();
+
+        if (!term) {
+            Swal.fire('Info', 'Please enter a search term', 'info');
             setLoading(false);
+            return;
+        }
+
+        if (searchType === 'id') {
+            params.lid = term;
+        } else if (searchType === 'name') {
+            params.name = term;
+        }
+
+        const response = await axios.get(`/lecture-enrollments/search`, { params });
+
+        // If searching by ID
+        if (searchType === 'id' && response.data.lecture) {
+            setLecture(response.data.lecture);
+            setStudents(response.data.students || []);
+            setSelectedLectureId(response.data.lecture.lid);
+
+        // If searching by Name
+        } else if (searchType === 'name' && response.data.lectures) {
+            const lectures = response.data.lectures;
+            setMatchedLectures(lectures);
+
+            if (lectures.length === 1) {
+                // Auto-select if only one match
+                fetchLectureDetails(lectures[0].lid);
+            } else if (lectures.length === 0) {
+                Swal.fire('Info', 'No lectures found', 'info');
+            }
+        } else {
+            Swal.fire('Info', response.data.message || 'No lectures found', 'info');
+        }
+
+    } catch (error: any) {
+        if (error.response?.status === 404) {
+            Swal.fire('Info', error.response.data.message || 'Lecture not found', 'info');
+        } else {
+            Swal.fire('Error', error.response?.data?.message || 'An error occurred', 'error');
+        }
+    } finally {
+        setLoading(false);
+    }
+};
+
+
+ const fetchLectureDetails = async (lid: string) => {
+    if (!lid) return;
+
+    setLoading(true);
+    setLecture(null);
+    setStudents([]);
+    setMatchedLectures([]);
+    setSelectedLectureId(lid);
+
+    try {
+        const response = await axios.get(`/lecture-payments/${lid}`);
+
+        if (response.data.lecture) {
+            setLecture(response.data.lecture);
+            setStudents(response.data.students || []);
+            setSelectedLectureId(response.data.lecture.lid);
+        } else {
+            Swal.fire('Info', 'Lecture details not found', 'info');
+        }
+    } catch (error: any) {
+        if (error.response?.status === 404) {
+            Swal.fire('Info', error.response.data.message || 'Lecture not found', 'info');
+        } else {
+            Swal.fire('Error', error.response?.data?.message || 'Failed to fetch lecture details', 'error');
+        }
+    } finally {
+        setLoading(false);
+    }
+};
+
+
+    const handleLectureSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const lid = e.target.value;
+        if (lid) {
+            fetchLectureDetails(lid);
         }
     };
 
@@ -72,14 +160,33 @@ export default function LectureClasses({ allClasses: initialClasses = [] }: { al
                 <h2 className="mb-6 text-center text-2xl font-semibold">Lecture Classes and Payments</h2>
 
                 <form onSubmit={handleSearch} className="mb-8">
+                    <div className="mb-4 flex gap-4">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium">Search by:</label>
+                            <select
+                                value={searchType}
+                                onChange={(e) => {
+                                    setSearchType(e.target.value as 'id' | 'name');
+                                    setMatchedLectures([]);
+                                    setLecture(null);
+                                    setStudents([]);
+                                }}
+                                className="rounded-md border border-gray-300 bg-slate-800 px-3 py-2 text-white"
+                            >
+                                <option value="id">Lecture ID</option>
+                                <option value="name">Lecture Name</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div className="flex gap-4">
                         <Input
                             type="text"
-                            name="lid"
-                            placeholder="Enter Lecture ID (LID)"
+                            name="searchTerm"
+                            placeholder={searchType === 'id' ? "Enter Lecture ID (LID)" : "Enter Lecture Name"}
                             required
-                            value={data.lid}
-                            onChange={(e) => setData('lid', e.target.value)}
+                            value={data.searchTerm}
+                            onChange={(e) => setData('searchTerm', e.target.value)}
                             className="flex-1"
                         />
                         <button
@@ -91,6 +198,25 @@ export default function LectureClasses({ allClasses: initialClasses = [] }: { al
                         </button>
                     </div>
                 </form>
+
+                {matchedLectures.length > 0 && (
+                    <div className="mb-6 rounded-lg bg-slate-700 p-4">
+                        <h3 className="mb-3 text-lg font-semibold">Multiple Lectures Found</h3>
+                        <p className="mb-3 text-sm text-gray-300">Please select a lecture from the list:</p>
+                        <select
+                            value={selectedLectureId}
+                            onChange={handleLectureSelect}
+                            className="w-full rounded-md border border-gray-300 bg-slate-800 px-3 py-2 text-white"
+                        >
+                            <option value="">-- Select Lecture --</option>
+                            {matchedLectures.map((lec) => (
+                                <option key={lec.lid} value={lec.lid}>
+                                    {lec.lec_name} ({lec.lid})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 {lecture && (
                     <div className="mb-8 rounded-lg bg-slate-700 p-4">
@@ -107,7 +233,7 @@ export default function LectureClasses({ allClasses: initialClasses = [] }: { al
                         </div>
 
                         <h3 className="mb-4 text-xl font-semibold">Classes Teaching</h3>
-                        {lecture.classes.length > 0 ? (
+                        {lecture.classes && lecture.classes.length > 0 ? (
                             <div className="grid grid-cols-1 gap-4">
                                 {lecture.classes.map((cls) => (
                                     <div key={cls.cid} className="rounded-lg bg-slate-600 p-4">
@@ -128,17 +254,30 @@ export default function LectureClasses({ allClasses: initialClasses = [] }: { al
                                             <span>{cls.student_count}</span>
                                         </div>
                                         <div className="mb-2 flex justify-between">
-                                            <span className="font-semibold">Total Earned (75%):</span>
-                                            <span>Rs.{Number(cls.total_earned).toFixed(2)}</span>
-                                        </div>
-                                        <div className="mb-2 flex justify-between">
-                                            <span className="font-semibold">Total Paid:</span>
-                                            <span>Rs.{Number(cls.total_paid).toFixed(2)}</span>
-                                        </div>
-                                        <div className="mb-2 flex justify-between">
-                                            <span className="font-semibold">Due Amount:</span>
-                                            <span className="text-red-400">Rs.{Number(cls.due_amount).toFixed(2)}</span>
-                                        </div>
+    <span className="font-semibold">Total Earned (75%):</span>
+    <span>Rs.{Number(cls.total_earned).toFixed(2)}</span>
+</div>
+<div className="mb-2 flex justify-between">
+    <span className="font-semibold">Total Paid:</span>
+    <span>Rs.{Number(cls.total_paid).toFixed(2)}</span>
+</div>
+{cls.due_amount > 0 ? (
+    <div className="mb-2 flex justify-between">
+        <span className="font-semibold">Due Amount:</span>
+        <span className="text-red-400">Rs.{Number(cls.due_amount).toFixed(2)}</span>
+    </div>
+) : (
+    <div className="mb-2 flex justify-between">
+        <span className="font-semibold">Status:</span>
+        <span className="text-green-400">Paid in Full</span>
+    </div>
+)}
+{cls.overpaid_amount > 0 && (
+    <div className="mb-2 flex justify-between">
+        <span className="font-semibold">Overpaid:</span>
+        <span className="text-yellow-400">Rs.{Number(cls.overpaid_amount).toFixed(2)}</span>
+    </div>
+)}
 
                                         <h4 className="mt-4 mb-2 text-lg font-semibold">Students in Class</h4>
                                         <div className="rounded-md bg-slate-700 p-3">

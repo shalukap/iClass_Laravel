@@ -6,21 +6,24 @@ use App\Models\Students;
 use App\Models\Schools;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Validator;
 
 class StudentsController extends Controller
 {
-    public function index()
-    {
-        $students = Students::with([
-            'schoolDetails' => function ($query) {
-                $query->select('schoolId', 'name');
-            }
-        ])->get();
+   public function index()
+{
+    $students = Students::with('schoolDetails')->get();
 
-        return Inertia::render('students/index', [
-            'students' => $students
-        ]);
-    }
+
+    // dd($students->toArray());
+
+    return Inertia::render('students/index', [
+        'students' => $students
+    ]);
+}
+
+
+
 
     public function create()
     {
@@ -32,68 +35,61 @@ class StudentsController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $last = Students::orderBy('sid', 'desc')->first();
-        $number = $last ? (substr($last->sid, 3) + 1) : 1;
-        $sid = 'STU' . sprintf('%06d', $number);
+   public function store(Request $request)
+{
+    $validated = $request->validate(Students::rules(false));
 
-        $request->merge([
-            'sid' => $sid,
-            'parentName' => $request->parentName ?? 'Unknown Parent',
-            'tpNo' => $request->tpNo,
-            'isActive' => $request->isActive,
-            'schoolId' => $request->school,
-        ]);
+    $last = Students::orderBy('sid', 'desc')->first();
+    $number = $last ? (substr($last->sid, 3) + 1) : 1;
+    $sid = 'STU' . sprintf('%06d', $number);
 
-        if ($request->hasFile('image')) {
-            $filename = $request->file('image')->getClientOriginalName();
-            $request->file('image')->move(public_path('images'), $filename);
-            $request->merge(['image' => $filename]);
-        } else {
-            $request->merge(['image' => 'default.jpg']);
-        }
-
-        Students::create($request->all());
-
-        return redirect()->route('students.index');
+    if ($request->hasFile('image')) {
+        $filename = $request->file('image')->getClientOriginalName();
+        $request->file('image')->move(public_path('images'), $filename);
+        $validated['image'] = $filename;
+    } else {
+        $validated['image'] = 'default.jpg';
     }
 
-    public function edit(Students $student)
-    {
-        $schools = Schools::all(['schoolId', 'name']);
+    $validated['sid'] = $sid;
+    $validated['schoolId'] = $request->school; // map correctly
 
-        return Inertia::render('students/create', [
-            'student' => [
-                ...$student->toArray(),
-                'school' => $student->schoolId
-            ],
-            'schools' => $schools,
-            'isEdit' => true
-        ]);
+    Students::create($validated);
+
+    return redirect()->route('students.index');
+}
+
+public function update(Request $request, Students $student)
+{
+    $validated = $request->validate(Students::rules(true));
+
+    if ($request->hasFile('image')) {
+        $filename = $request->file('image')->getClientOriginalName();
+        $request->file('image')->move(public_path('images'), $filename);
+        $validated['image'] = $filename;
     }
 
-    public function update(Request $request, Students $student)
-    {
-        if ($request->hasFile('image')) {
-            $filename = $request->file('image')->getClientOriginalName();
-            $request->file('image')->move(public_path('images'), $filename);
-            $student->image = $filename;
-        }
+    $validated['schoolId'] = $request->school;
 
-        $student->sname = $request->sname;
-        $student->gender = $request->gender;
-        $student->address = $request->address;
-        $student->dob = $request->dob;
-        $student->schoolId = $request->school;
-        $student->parentName = $request->parentName;
-        $student->tpNo = $request->tpNo;
-        $student->watsapp = $request->watsapp;
-        $student->isActive = $request->isActive;
-        $student->save();
+    $student->update($validated);
 
-        return redirect()->route('students.index');
-    }
+    return redirect()->route('students.index');
+}
+
+public function edit(Students $student)
+{
+    $schools = Schools::all(['schoolId', 'name']);
+
+    return Inertia::render('students/create', [
+        'student' => [
+            ...$student->toArray(),
+            'school' => $student->schoolId
+        ],
+        'schools' => $schools,
+        'isEdit' => true
+    ]);
+}
+
 
     public function destroy(Students $student)
     {

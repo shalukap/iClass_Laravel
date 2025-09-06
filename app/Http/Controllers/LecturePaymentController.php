@@ -91,28 +91,32 @@ class LecturePaymentController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $lid = $request->input('lid');
+public function store(Request $request)
+{
+    $lid = $request->input('lid');
 
-        $request->validate([
-            'cid' => 'required|string',
-            'year' => 'required|integer|min:2000|max:2100',
-            'month' => 'required|integer|min:1|max:12',
-            'amount' => 'required|numeric|min:0',
-        ]);
+    $request->validate([
+        'cids' => 'required|array',
+        'cids.*' => 'string',
+        'year' => 'required|integer|min:2000|max:2100',
+        'month' => 'required|integer|min:1|max:12',
+        'amount' => 'required|numeric|min:0',
+    ]);
 
+    $errors = [];
+    $successCount = 0;
+
+    foreach ($request->cids as $cid) {
         $existingPayment = LecturePayment::where([
             'lid' => $lid,
-            'cid' => $request->cid,
+            'cid' => $cid,
             'year' => $request->year,
             'month' => $request->month,
         ])->first();
 
         if ($existingPayment) {
-            return back()->withErrors([
-                'payment' => 'A payment already exists for this lecture, class, and period.',
-            ]);
+            $errors[] = "A payment already exists for class $cid in this period.";
+            continue;
         }
 
         $last = LecturePayment::orderBy('lpid', 'desc')->first();
@@ -122,16 +126,24 @@ class LecturePaymentController extends Controller
         LecturePayment::create([
             'lpid' => $lpid,
             'lid' => $lid,
-            'cid' => $request->cid,
+            'cid' => $cid,
             'year' => $request->year,
             'month' => $request->month,
             'amount' => $request->amount,
             'payment_date' => now(),
         ]);
 
-        return redirect()->route('lecture-payments.index');
+        $successCount++;
     }
 
+    if (!empty($errors)) {
+        return back()->withErrors([
+            'payment' => implode(' ', $errors) . ($successCount > 0 ? " ($successCount payments were successful)" : ''),
+        ]);
+    }
+
+    return redirect()->route('lecture-payments.index');
+}
     public function classes(Request $request)
     {
         $classes = Classes::select('cid', 'name', 'medium', 'syllabus')->get();

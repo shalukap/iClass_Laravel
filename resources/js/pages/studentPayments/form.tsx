@@ -130,7 +130,7 @@ export default function PaymentForm({
                   classes.map((cls) => (
                     <div key={cls.cid} className="mb-2 flex justify-between">
                       <span>{cls.name}</span>
-                    <span>Due: ${Number(cls.due_amount).toFixed(2)}</span>
+                    <span>Due: Rs. {Number(cls.due_amount).toFixed(2)}</span>
 
                     </div>
                   ))
@@ -166,7 +166,7 @@ export default function PaymentForm({
                 <SelectContent>
                   {classes.map((cls) => (
                     <SelectItem key={cls.cid} value={cls.cid}>
-    {cls.name} (Due: ${Number(cls.due_amount).toFixed(2)})
+    {cls.name} (Due: Rs. {Number(cls.due_amount).toFixed(2)})
                     </SelectItem>
                   ))}
                 </SelectContent>

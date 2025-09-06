@@ -9,7 +9,6 @@ class LecturePayment extends Model
 {
     use HasFactory;
 
-    protected $table = 'lecture_payments';
     protected $primaryKey = 'lpid';
     public $incrementing = false;
     protected $keyType = 'string';
@@ -25,17 +24,21 @@ class LecturePayment extends Model
     ];
 
     protected $casts = [
-        'year' => 'integer',
-        'month' => 'integer',
-        'amount' => 'float',
-        'payment_date' => 'date',
+        'payment_date' => 'datetime',
+        'amount' => 'decimal:2',
     ];
 
-    public function lectures()
+    /**
+     * Get the lecture associated with this payment.
+     */
+    public function lecture()
     {
         return $this->belongsTo(Lectures::class, 'lid', 'lid');
     }
 
+    /**
+     * Get the class associated with this payment.
+     */
     public function class()
     {
         return $this->belongsTo(Classes::class, 'cid', 'cid');

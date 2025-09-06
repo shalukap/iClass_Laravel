@@ -9,8 +9,12 @@ import Swal from 'sweetalert2';
 interface Student {
     sid: string;
     sname: string;
-
     classes: Class[];
+}
+
+interface StudentBasic {
+    sid: string;
+    sname: string;
 }
 
 interface Class {
@@ -29,37 +33,132 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
     ];
 
     const [student, setStudent] = useState<Student | null>(null);
+    const [matchedStudents, setMatchedStudents] = useState<StudentBasic[]>([]);
     const [allClasses, setAllClasses] = useState<Class[]>(initialClasses);
     const [loading, setLoading] = useState(false);
+    const [searchType, setSearchType] = useState<'id' | 'name'>('id');
+    const [selectedStudentId, setSelectedStudentId] = useState('');
 
     const { data, setData, post, reset } = useForm({
-        sid: '',
+        searchTerm: '',
         cid: '',
+        sid: '',
     });
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setMatchedStudents([]);
+        setStudent(null);
+        setSelectedStudentId('');
+
         try {
-            const response = await axios.get(`/enrollments/search?sid=${data.sid}`);
-            console.log('Search response:', response.data);
-            if (response.data.student) {
+            const term = data.searchTerm.trim();
+
+            if (!term) {
+                Swal.fire('Info', 'Please enter a search term', 'info');
+                setLoading(false);
+                return;
+            }
+
+            // Prepare search parameters
+            const params: any = {};
+            if (searchType === 'id') {
+                params.sid = term;
+            } else if (searchType === 'name') {
+                params.name = term;
+            }
+
+            const response = await axios.get(`/enrollments/search`, { params });
+
+            // If searching by ID
+            if (searchType === 'id' && response.data.student) {
                 setStudent(response.data.student);
                 setAllClasses(response.data.allClasses || allClasses);
+                setSelectedStudentId(response.data.student.sid);
+                setData('sid', response.data.student.sid); // FIX: Set sid in form data
                 reset('cid');
+
+            // If searching by Name
+            } else if (searchType === 'name' && response.data.students) {
+                const students = response.data.students;
+                setMatchedStudents(students);
+
+                if (students.length === 1) {
+                    // Auto-select if only one match
+                    fetchStudentDetails(students[0].sid);
+                } else if (students.length === 0) {
+                    Swal.fire('Info', 'No students found', 'info');
+                }
             } else {
-                Swal.fire('Error', 'Student not found', 'error');
+                Swal.fire('Info', response.data.message || 'No students found', 'info');
             }
-        } catch (error) {
-            Swal.fire('Error', (error as any).response?.data?.message || 'Student not found', 'error');
+
+        } catch (error: any) {
+            if (error.response?.status === 404) {
+                Swal.fire('Info', error.response.data.message || 'Student not found', 'info');
+            } else {
+                Swal.fire('Error', error.response?.data?.message || 'An error occurred', 'error');
+            }
         } finally {
             setLoading(false);
         }
     };
 
+    const fetchStudentDetails = async (sid: string) => {
+        if (!sid) return;
+
+        setLoading(true);
+        setStudent(null);
+        setMatchedStudents([]);
+        setSelectedStudentId(sid);
+        setData('sid', sid); // FIX: Set sid in form data
+
+        try {
+            const response = await axios.get(`/enrollments/search?sid=${sid}`);
+
+            if (response.data.student) {
+                setStudent(response.data.student);
+                setAllClasses(response.data.allClasses || allClasses);
+                setSelectedStudentId(response.data.student.sid);
+                setData('sid', response.data.student.sid); // FIX: Set sid in form data
+                reset('cid');
+            } else {
+                Swal.fire('Info', 'Student details not found', 'info');
+            }
+        } catch (error: any) {
+            if (error.response?.status === 404) {
+                Swal.fire('Info', error.response.data.message || 'Student not found', 'info');
+            } else {
+                Swal.fire('Error', error.response?.data?.message || 'Failed to fetch student details', 'error');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleStudentSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const sid = e.target.value;
+        if (sid) {
+            fetchStudentDetails(sid);
+        }
+    };
+
     const handleEnroll = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // FIX: Ensure both sid and cid are set before submitting
+        if (!selectedStudentId || !data.cid) {
+            Swal.fire('Error', 'Please select both student and class', 'error');
+            return;
+        }
+
+        // FIX: Use the correct data structure
         post(route('enrollments.store'), {
+            data: {
+                sid: selectedStudentId,
+                cid: data.cid
+            },
             onSuccess: () => {
                 Swal.fire({
                     position: 'top-end',
@@ -68,15 +167,18 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
                     showConfirmButton: false,
                     timer: 1500,
                 });
-                reset();
-                setStudent(null);
-                setData('sid', '');
+                // Refresh student data to show updated enrollments
+                if (selectedStudentId) {
+                    fetchStudentDetails(selectedStudentId);
+                }
+                reset('cid');
             },
-            onError: () => {
+            onError: (errors) => {
+                console.log('Enrollment errors:', errors);
                 Swal.fire({
                     icon: 'error',
                     title: 'Enrollment Failed',
-                    text: 'Please try again',
+                    text: errors.sid || errors.cid || 'Please try again',
                 });
             },
         });
@@ -85,10 +187,6 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
     const availableClasses =
         student && Array.isArray(allClasses) ? allClasses.filter((cls) => !student.classes.some((enrolled) => enrolled.cid === cls.cid)) : [];
 
-    console.log('allClasses:', allClasses);
-    console.log('student:', student);
-    console.log('availableClasses:', availableClasses);
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Enroll Student" />
@@ -96,14 +194,35 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
                 <h2 className="mb-6 text-center text-2xl font-semibold">Enroll Student to Class</h2>
 
                 <form onSubmit={handleSearch} className="mb-8">
+                    <div className="mb-4 flex gap-4">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium">Search by:</label>
+                            <select
+                                value={searchType}
+                                onChange={(e) => {
+                                    setSearchType(e.target.value as 'id' | 'name');
+                                    setMatchedStudents([]);
+                                    setStudent(null);
+                                    setSelectedStudentId('');
+                                    setData('sid', '');
+                                    setData('searchTerm', '');
+                                }}
+                                className="rounded-md border border-gray-300 bg-slate-800 px-3 py-2 text-white"
+                            >
+                                <option value="id">Student ID</option>
+                                <option value="name">Student Name</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div className="flex gap-4">
                         <Input
                             type="text"
-                            name="sid"
-                            placeholder="Enter Student ID (SID)"
+                            name="searchTerm"
+                            placeholder={searchType === 'id' ? "Enter Student ID (SID)" : "Enter Student Name"}
                             required
-                            value={data.sid}
-                            onChange={(e) => setData('sid', e.target.value)}
+                            value={data.searchTerm}
+                            onChange={(e) => setData('searchTerm', e.target.value)}
                             className="flex-1"
                         />
                         <button
@@ -115,6 +234,25 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
                         </button>
                     </div>
                 </form>
+
+                {matchedStudents.length > 0 && (
+                    <div className="mb-6 rounded-lg bg-slate-700 p-4">
+                        <h3 className="mb-3 text-lg font-semibold">Multiple Students Found</h3>
+                        <p className="mb-3 text-sm text-gray-300">Please select a student from the list:</p>
+                        <select
+                            value={selectedStudentId}
+                            onChange={handleStudentSelect}
+                            className="w-full rounded-md border border-gray-300 bg-slate-800 px-3 py-2 text-white"
+                        >
+                            <option value="">-- Select Student --</option>
+                            {matchedStudents.map((student) => (
+                                <option key={student.sid} value={student.sid}>
+                                    {student.sname} ({student.sid})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 {student && (
                     <div className="mb-8 rounded-lg bg-slate-700 p-4">
