@@ -46,7 +46,7 @@ class EnrollmentController extends Controller
             ]);
         }
 
-        // Search by Student Name (partial, case-insensitive match)
+        // Search by Student Name
         if ($name) {
             $students = Students::whereRaw('LOWER(sname) LIKE ?', ['%' . strtolower($name) . '%'])
                 ->select('sid', 'sname')

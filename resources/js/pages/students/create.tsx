@@ -52,18 +52,17 @@ export default function Create({ student, schools, isEdit }: Props) {
         isActive: student?.isActive ?? true,
     });
 
-    // Function to validate phone numbers (10 digits only)
+
     const validatePhoneNumber = (value: string): boolean => {
         const phoneRegex = /^\d{10}$/;
         return phoneRegex.test(value);
     };
 
-    // Function to handle phone number input
+
     const handlePhoneInput = (field: 'tpNo' | 'watsapp', value: string) => {
-        // Remove non-numeric characters
+
         const numericValue = value.replace(/\D/g, '');
 
-        // Limit to 10 digits
         const truncatedValue = numericValue.slice(0, 10);
 
         setData(field, truncatedValue);
@@ -72,7 +71,6 @@ export default function Create({ student, schools, isEdit }: Props) {
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
 
-        // Validate phone numbers before submission
         if (!validatePhoneNumber(data.tpNo)) {
             Swal.fire({
                 icon: 'error',

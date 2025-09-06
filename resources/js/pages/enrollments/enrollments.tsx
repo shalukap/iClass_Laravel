@@ -61,7 +61,7 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
                 return;
             }
 
-            // Prepare search parameters
+
             const params: any = {};
             if (searchType === 'id') {
                 params.sid = term;
@@ -85,7 +85,7 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
                 setMatchedStudents(students);
 
                 if (students.length === 1) {
-                    // Auto-select if only one match
+
                     fetchStudentDetails(students[0].sid);
                 } else if (students.length === 0) {
                     Swal.fire('Info', 'No students found', 'info');
@@ -112,7 +112,7 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
         setStudent(null);
         setMatchedStudents([]);
         setSelectedStudentId(sid);
-        setData('sid', sid); // FIX: Set sid in form data
+        setData('sid', sid);
 
         try {
             const response = await axios.get(`/enrollments/search?sid=${sid}`);
@@ -121,7 +121,7 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
                 setStudent(response.data.student);
                 setAllClasses(response.data.allClasses || allClasses);
                 setSelectedStudentId(response.data.student.sid);
-                setData('sid', response.data.student.sid); // FIX: Set sid in form data
+                setData('sid', response.data.student.sid);
                 reset('cid');
             } else {
                 Swal.fire('Info', 'Student details not found', 'info');
@@ -147,13 +147,12 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
     const handleEnroll = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // FIX: Ensure both sid and cid are set before submitting
         if (!selectedStudentId || !data.cid) {
             Swal.fire('Error', 'Please select both student and class', 'error');
             return;
         }
 
-        // FIX: Use the correct data structure
+
         post(route('enrollments.store'), {
             data: {
                 sid: selectedStudentId,
@@ -167,7 +166,7 @@ export default function Enroll({ allClasses: initialClasses = [] }: { allClasses
                     showConfirmButton: false,
                     timer: 1500,
                 });
-                // Refresh student data to show updated enrollments
+
                 if (selectedStudentId) {
                     fetchStudentDetails(selectedStudentId);
                 }

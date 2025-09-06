@@ -52,7 +52,7 @@ class StudentsController extends Controller
     }
 
     $validated['sid'] = $sid;
-    $validated['schoolId'] = $request->school; // map correctly
+    $validated['schoolId'] = $request->school;
 
     Students::create($validated);
 

@@ -60,18 +60,18 @@ export default function CreateOrEdit({ lecture, isEdit = false, schools }: Props
         return `${year}-${month}-${day}`;
     }
 
-    // Function to validate phone numbers (10 digits only)
+
     const validatePhoneNumber = (value: string): boolean => {
         const phoneRegex = /^\d{10}$/;
         return phoneRegex.test(value);
     };
 
-    // Function to handle phone number input
+
     const handlePhoneInput = (field: 'tp_no' | 'whatsapp_no' | 'bank_account', value: string) => {
-        // Remove non-numeric characters
+
         const numericValue = value.replace(/\D/g, '');
 
-        // For bank account, no limit; for phone numbers, limit to 10 digits
+
         let truncatedValue = numericValue;
         if (field !== 'bank_account') {
             truncatedValue = numericValue.slice(0, 10);
