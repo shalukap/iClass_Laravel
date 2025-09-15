@@ -35,14 +35,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/enrollments/search', [EnrollmentController::class, 'searchStudent'])
         ->name('enrollments.search');
 
+
     Route::get('/enrollments', [EnrollmentController::class, 'index']);
 
     Route::resource('lecture-payments', LecturePaymentController::class)->only(['index', 'create', 'store']);
     Route::get('lecture-payments/classes', [LecturePaymentController::class, 'classes'])->name('lecture-payments.classes');
     Route::get('lecture-payments/search', [LecturePaymentController::class, 'searchLecture'])->name('lecture-payments.search');
 
+
     Route::get('/lecture-enrollments', [LectureEnrollmentController::class, 'index']);
     Route::get('/lecture-enrollments/search', [LectureEnrollmentController::class, 'searchLecture']);
+    Route::get('/lecture-payments/{lid}', [LectureEnrollmentController::class, 'getLectureById']);
     Route::post('/lecture-enrollments', [LectureEnrollmentController::class, 'storeEnrollment']);
 });
 

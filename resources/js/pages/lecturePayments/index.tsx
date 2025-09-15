@@ -62,9 +62,16 @@ export default function Index({ lectures = [] }: { lectures?: Lecture[] }) {
                                 <tr key={lecture.lid}>
                                     <td className="px-4 py-2">{lecture.lid}</td>
                                     <td className="px-4 py-2">{lecture.lec_name}</td>
-                                    <td className="px-4 py-2">Rs.{lecture.total_earned?.toFixed(2) ?? '0.00'}</td>
-                                    <td className="px-4 py-2">Rs.{lecture.total_paid?.toFixed(2) ?? '0.00'}</td>
-                                    <td className="px-4 py-2">Rs.{lecture.due_amount?.toFixed(2) ?? '0.00'}</td>
+                                    <td className="px-4 py-2">
+  Rs.{Number(lecture.total_earned ?? 0).toFixed(2)}
+</td>
+<td className="px-4 py-2">
+  Rs.{Number(lecture.total_paid ?? 0).toFixed(2)}
+</td>
+<td className="px-4 py-2">
+  Rs.{Number(lecture.due_amount ?? 0).toFixed(2)}
+</td>
+
                                     <td className="px-4 py-2">
                                         <Link
                                             as="button"

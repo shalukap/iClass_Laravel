@@ -39,7 +39,7 @@ export default function Create({ student, schools, isEdit }: Props) {
         },
     ];
 
-    const { data, setData, post, put } = useForm({
+    const { data, setData, post, put, errors } = useForm({
         sid: student?.sid || '',
         sname: student?.sname || '',
         gender: student?.gender || '',
@@ -52,8 +52,42 @@ export default function Create({ student, schools, isEdit }: Props) {
         isActive: student?.isActive ?? true,
     });
 
+
+    const validatePhoneNumber = (value: string): boolean => {
+        const phoneRegex = /^\d{10}$/;
+        return phoneRegex.test(value);
+    };
+
+
+    const handlePhoneInput = (field: 'tpNo' | 'watsapp', value: string) => {
+
+        const numericValue = value.replace(/\D/g, '');
+
+        const truncatedValue = numericValue.slice(0, 10);
+
+        setData(field, truncatedValue);
+    };
+
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
+
+        if (!validatePhoneNumber(data.tpNo)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Phone Number',
+                text: 'Telephone number must be exactly 10 digits',
+            });
+            return;
+        }
+
+        if (!validatePhoneNumber(data.watsapp)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid WhatsApp Number',
+                text: 'WhatsApp number must be exactly 10 digits',
+            });
+            return;
+        }
 
         if (isEdit) {
             put(route('students.update', student?.sid), {
@@ -66,6 +100,15 @@ export default function Create({ student, schools, isEdit }: Props) {
                         timer: 1500,
                     });
                 },
+                onError: (errors) => {
+                    if (errors.tpNo || errors.watsapp) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: errors.tpNo || errors.watsapp,
+                        });
+                    }
+                },
             });
         } else {
             post(route('students.store'), {
@@ -77,6 +120,15 @@ export default function Create({ student, schools, isEdit }: Props) {
                         showConfirmButton: false,
                         timer: 1500,
                     });
+                },
+                onError: (errors) => {
+                    if (errors.tpNo || errors.watsapp) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: errors.tpNo || errors.watsapp,
+                        });
+                    }
                 },
             });
         }
@@ -93,14 +145,17 @@ export default function Create({ student, schools, isEdit }: Props) {
                     <h2 className="mb-8 text-center text-3xl font-bold">{isEdit ? 'Edit Student' : 'Add New Student'}</h2>
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        <Input
-                            type="text"
-                            name="sname"
-                            placeholder="Enter Student Name"
-                            required
-                            value={data.sname}
-                            onChange={(e) => setData('sname', e.target.value)}
-                        />
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-white">Student Name</label>
+                            <Input
+                                type="text"
+                                name="sname"
+                                placeholder="Enter Student Name"
+                                required
+                                value={data.sname}
+                                onChange={(e) => setData('sname', e.target.value)}
+                            />
+                        </div>
 
                         <div>
                             <label className="mb-2 block text-sm font-medium text-white">Gender</label>
@@ -117,16 +172,28 @@ export default function Create({ student, schools, isEdit }: Props) {
                             </select>
                         </div>
 
-                        <Input
-                            type="text"
-                            name="address"
-                            placeholder="Enter Student Address"
-                            required
-                            value={data.address}
-                            onChange={(e) => setData('address', e.target.value)}
-                        />
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-white">Address</label>
+                            <Input
+                                type="text"
+                                name="address"
+                                placeholder="Enter Student Address"
+                                required
+                                value={data.address}
+                                onChange={(e) => setData('address', e.target.value)}
+                            />
+                        </div>
 
-                        <Input type="date" name="dob" required value={data.dob} onChange={(e) => setData('dob', e.target.value)} />
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-white">Date of Birth</label>
+                            <Input
+                                type="date"
+                                name="dob"
+                                required
+                                value={data.dob}
+                                onChange={(e) => setData('dob', e.target.value)}
+                            />
+                        </div>
 
                         <div>
                             <label className="mb-2 block text-sm font-medium text-white">Present School</label>
@@ -146,36 +213,55 @@ export default function Create({ student, schools, isEdit }: Props) {
                             </select>
                         </div>
 
-                        <Input
-                            type="text"
-                            name="parentName"
-                            placeholder="Enter Parent Name"
-                            required
-                            value={data.parentName}
-                            onChange={(e) => setData('parentName', e.target.value)}
-                        />
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-white">Parent Name</label>
+                            <Input
+                                type="text"
+                                name="parentName"
+                                placeholder="Enter Parent Name"
+                                required
+                                value={data.parentName}
+                                onChange={(e) => setData('parentName', e.target.value)}
+                            />
+                        </div>
 
-                        <Input
-                            type="text"
-                            name="tpNo"
-                            placeholder="0112345678"
-                            required
-                            value={data.tpNo}
-                            onChange={(e) => setData('tpNo', e.target.value)}
-                        />
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-white">Telephone Number</label>
+                            <Input
+                                type="text"
+                                name="tpNo"
+                                placeholder="0771234567"
+                                required
+                                value={data.tpNo}
+                                onChange={(e) => handlePhoneInput('tpNo', e.target.value)}
+                                pattern="\d{10}"
+                                title="Please enter exactly 10 digits"
+                            />
+                            {data.tpNo && !validatePhoneNumber(data.tpNo) && (
+                                <p className="mt-1 text-sm text-red-400">Must be exactly 10 digits</p>
+                            )}
+                        </div>
 
-                        <Input
-                            type="text"
-                            name="watsapp"
-                            placeholder="Whatsapp number"
-                            required
-                            value={data.watsapp}
-                            onChange={(e) => setData('watsapp', e.target.value)}
-                        />
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-white">WhatsApp Number</label>
+                            <Input
+                                type="text"
+                                name="watsapp"
+                                placeholder="0771234567"
+                                required
+                                value={data.watsapp}
+                                onChange={(e) => handlePhoneInput('watsapp', e.target.value)}
+                                pattern="\d{10}"
+                                title="Please enter exactly 10 digits"
+                            />
+                            {data.watsapp && !validatePhoneNumber(data.watsapp) && (
+                                <p className="mt-1 text-sm text-red-400">Must be exactly 10 digits</p>
+                            )}
+                        </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 pt-6">
                             <Input type="checkbox" name="isActive" checked={data.isActive} onChange={(e) => setData('isActive', e.target.checked)} />
-                            <label className="text-sm font-medium text-white">Active</label>
+                            <label className="text-sm font-medium text-white">Active Status</label>
                         </div>
                     </div>
 

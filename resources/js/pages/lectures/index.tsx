@@ -7,6 +7,11 @@ import { FaEdit } from 'react-icons/fa';
 import { MdDeleteForever } from 'react-icons/md';
 import Swal from 'sweetalert2';
 
+interface School {
+    schoolId: string;
+    name: string;
+}
+
 interface Lecture {
     lid: string;
     lec_name: string;
@@ -17,6 +22,8 @@ interface Lecture {
     lec_dob: string;
     lec_email: string;
     is_employed: boolean;
+    school_id?: string;
+    school?: School;
     bank_account: string;
     bank_name: string;
     bank_branch: string;
@@ -57,7 +64,10 @@ export default function Index({ lectures: originalLectures }: { lectures: Lectur
     useEffect(() => {
         const searchQuery = searchLecture.toLowerCase();
         const filtered = originalLectures.filter(
-            (lecture) => (lecture.lid?.toLowerCase() || '').includes(searchQuery) || (lecture.lec_name?.toLowerCase() || '').includes(searchQuery),
+            (lecture) =>
+                (lecture.lid?.toLowerCase() || '').includes(searchQuery) ||
+                (lecture.lec_name?.toLowerCase() || '').includes(searchQuery) ||
+                (lecture.school?.name?.toLowerCase() || '').includes(searchQuery)
         );
         setFilteredLectures(filtered);
     }, [searchLecture, originalLectures]);
@@ -73,7 +83,7 @@ export default function Index({ lectures: originalLectures }: { lectures: Lectur
                             type="text"
                             id="search"
                             className="w-full rounded-md border border-gray-300 px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            placeholder="Search LID, Name"
+                            placeholder="Search LID, Name, School"
                             value={searchLecture}
                             onChange={(e) => setSearchLecture(e.target.value)}
                         />
@@ -92,6 +102,7 @@ export default function Index({ lectures: originalLectures }: { lectures: Lectur
                             <th className="px-4 py-3 text-left text-sm font-semibold">DOB</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold">Employed</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold">School</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold">Bank Details</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold">Vehicle No</th>
                             <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
@@ -104,7 +115,7 @@ export default function Index({ lectures: originalLectures }: { lectures: Lectur
                                 <td className="px-4 py-2">{lec.lid}</td>
                                 <td className="px-4 py-2">{lec.lec_name}</td>
                                 <td className="px-4 py-2">{lec.lec_address}</td>
-                                <td className="px-4 py-2">{lec.qualification}</td>
+                                <td className="px-4 py-2 whitespace-pre-line">{lec.qualification}</td>
                                 <td className="px-4 py-2">{lec.tp_no}</td>
                                 <td className="px-4 py-2">{lec.whatsapp_no}</td>
                                 <td className="px-4 py-2">{new Date(lec.lec_dob).toLocaleDateString()}</td>
@@ -116,7 +127,12 @@ export default function Index({ lectures: originalLectures }: { lectures: Lectur
                                         {lec.is_employed ? 'Yes' : 'No'}
                                     </span>
                                 </td>
-                                <td className="px-4 py-2">{lec.bank_account ? `${lec.bank_name} (${lec.bank_branch})` : '-'}</td>
+                                <td className="px-4 py-2">
+                                    {lec.is_employed ? (lec.school ? lec.school.name : '-') : '-'}
+                                </td>
+                                <td className="px-4 py-2">
+                                    {lec.bank_account ? `${lec.bank_account} - ${lec.bank_name} (${lec.bank_branch})` : '-'}
+                                </td>
                                 <td className="px-4 py-2">{lec.vehicle_no || '-'}</td>
                                 <td className="px-4 py-2">
                                     <span className={`inline-block rounded-full px-3 py-1 text-white ${lec.status ? 'bg-green-500' : 'bg-red-500'}`}>

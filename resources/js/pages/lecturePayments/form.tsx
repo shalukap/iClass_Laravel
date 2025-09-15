@@ -1,4 +1,3 @@
-// resources/js/pages/lecture-payments/form.tsx
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
@@ -32,18 +31,45 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function PaymentForm({ lecture, classes, last_payment_date, current_year, current_month }: Props) {
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         lid: lecture.lid,
         lec_name: lecture.lec_name,
-        cid: classes.length > 0 ? classes[0].cid : '',
+        cids: [] as string[],
         year: current_year,
         month: current_month,
         amount: '',
     });
 
+    // Handle checkbox toggle
+    const toggleClassSelection = (cid: string) => {
+        if (data.cids.includes(cid)) {
+            setData('cids', data.cids.filter((id) => id !== cid));
+        } else {
+            setData('cids', [...data.cids, cid]);
+        }
+    };
+
+    // Select all classes
+    const selectAllClasses = () => {
+        setData('cids', classes.map(cls => cls.cid));
+    };
+
+    // Clear all selections
+    const clearAllClasses = () => {
+        setData('cids', []);
+    };
+
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        post(route('lecture-payments.store', lecture.lid), {
+
+        // Debug: log what's being sent
+        console.log('Submitting data:', data);
+
+        post(route('lecture-payments.store'), {
+            data: {
+                ...data,
+                cids: data.cids, // Ensure array is properly sent
+            },
             onSuccess: () => {
                 Swal.fire({
                     position: 'top-end',
@@ -51,6 +77,17 @@ export default function PaymentForm({ lecture, classes, last_payment_date, curre
                     title: 'Payment has been recorded',
                     showConfirmButton: false,
                     timer: 1500,
+                });
+            },
+            onError: (errors) => {
+                console.log('Errors:', errors);
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Error submitting payment',
+                    text: errors.payment || 'Please check your inputs',
+                    showConfirmButton: false,
+                    timer: 3000,
                 });
             },
         });
@@ -82,6 +119,13 @@ export default function PaymentForm({ lecture, classes, last_payment_date, curre
                     className="mx-auto max-h-full max-w-full rounded-xl bg-slate-800 p-10 text-white shadow-xl shadow-slate-700"
                 >
                     <h2 className="mb-8 text-center text-3xl font-bold">Make Payment for {lecture.lec_name}</h2>
+
+                    {/* Display errors if any */}
+                    {errors.payment && (
+                        <div className="mb-6 rounded-md bg-red-500 p-4 text-white">
+                            {errors.payment}
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         {/* Lecture ID */}
@@ -137,21 +181,50 @@ export default function PaymentForm({ lecture, classes, last_payment_date, curre
                             />
                         </div>
 
-                        {/* Class Select */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-white">Class</label>
-                            <Select value={data.cid} onValueChange={(value) => setData('cid', value)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select class" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {classes.map((cls) => (
-                                        <SelectItem key={cls.cid} value={cls.cid}>
-                                            {cls.name} (Due: Rs.{Number(cls.due_amount).toFixed(2)})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                        {/* Class Selection Checkboxes */}
+                        <div className="md:col-span-2">
+                            <label className="mb-2 block text-sm font-medium text-white">Select Classes</label>
+                            <div className="flex gap-2 mb-3">
+                                <button
+                                    type="button"
+                                    onClick={selectAllClasses}
+                                    className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                                >
+                                    Select All
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={clearAllClasses}
+                                    className="text-sm bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded"
+                                >
+                                    Clear All
+                                </button>
+                            </div>
+                            <div className="rounded-md bg-slate-700 p-4 space-y-2">
+                                {classes.length > 0 ? (
+                                    classes.map((cls) => (
+                                        <div key={cls.cid} className="flex items-center space-x-3">
+                                            <input
+                                                type="checkbox"
+                                                id={`class-${cls.cid}`}
+                                                checked={data.cids.includes(cls.cid)}
+                                                onChange={() => toggleClassSelection(cls.cid)}
+                                                className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                                            />
+                                            <label htmlFor={`class-${cls.cid}`} className="text-sm">
+                                                {cls.name} — Students: {cls.student_count} | Due: Rs.{Number(cls.due_amount).toFixed(2)}
+                                            </label>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <span>No classes assigned</span>
+                                )}
+                            </div>
+                            {data.cids.length > 0 && (
+                                <p className="mt-2 text-sm text-green-400">
+                                    Selected {data.cids.length} class(es)
+                                </p>
+                            )}
                         </div>
 
                         {/* Year Select */}
@@ -209,10 +282,10 @@ export default function PaymentForm({ lecture, classes, last_payment_date, curre
                     <div className="mt-8 text-center">
                         <button
                             type="submit"
-                            disabled={processing}
-                            className="rounded-lg bg-blue-600 px-8 py-3 font-semibold text-white transition-all hover:bg-blue-700"
+                            disabled={processing || data.cids.length === 0}
+                            className="rounded-lg bg-blue-600 px-8 py-3 font-semibold text-white transition-all hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed"
                         >
-                            Submit Payment
+                            {processing ? 'Processing...' : 'Submit Payment'}
                         </button>
                     </div>
                 </form>

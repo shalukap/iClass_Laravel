@@ -19,22 +19,22 @@ interface School {
 }
 
 interface Student {
-    id: number;
     sid: string;
     sname: string;
     image: string;
     address: string;
     dob: string;
     gender: string;
-    school: string;
+    schoolId: string;
     parentName: string;
     tpNo: string;
     watsapp: string;
     isActive: boolean;
-    schoolDetails?: School;
+    school_details?: School;
 }
 
-function handleDelete(id: number) {
+
+function handleDelete(sid: string) {
     Swal.fire({
         title: 'Are you sure?',
         text: "You won't be able to revert this!",
@@ -45,7 +45,7 @@ function handleDelete(id: number) {
         confirmButtonText: 'Yes, delete it!',
     }).then((result) => {
         if (result.isConfirmed) {
-            router.delete(route('students.destroy', id));
+            router.delete(route('students.destroy', sid));
             Swal.fire({
                 title: 'Deleted!',
                 text: 'Your file has been deleted.',
@@ -54,12 +54,7 @@ function handleDelete(id: number) {
         }
     });
 }
-/*
-function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
-    const searchQuery = e.target.value;
-    router.get(route('students.search'), { search: searchQuery });
-  }
-*/
+
 
 export default function Index({ students: originalStudents }: { students: Student[] }) {
     const [searchStudent, setSearchStudent] = useState('');
@@ -71,7 +66,8 @@ export default function Index({ students: originalStudents }: { students: Studen
             (student) =>
                 (student.sid?.toLowerCase() || '').includes(searchQuery) ||
                 (student.sname?.toLowerCase() || '').includes(searchQuery) ||
-                (student.school?.toLowerCase() || '').includes(searchQuery),
+                (student.school_details?.name?.toLowerCase() || '').includes(searchQuery)
+,
         );
 
         setFilteredStudents(filtered);
@@ -114,7 +110,7 @@ export default function Index({ students: originalStudents }: { students: Studen
                     </thead>
                     <tbody className="divide-y divide-gray-200 text-sm text-slate-800">
                         {filteredStudents.map((s) => (
-                            <tr key={s.id}>
+                            <tr key={s.sid}>
                                 <td className="px-4 py-2">{s.sid}</td>
                                 <td className="px-4 py-2">{s.sname}</td>
                                 <td className="px-4 py-2">
@@ -123,8 +119,7 @@ export default function Index({ students: originalStudents }: { students: Studen
                                 <td className="px-4 py-2">{s.address}</td>
 
                                 <td className="px-4 py-2">{new Date(s.dob).toLocaleDateString()}</td>
-                                <td>{s.schoolDetails?.name || 'N/A'}</td>
-
+                                <td className="px-4 py-2">{s.school_details?.name || 'N/A'}</td>
                                 <td className="px-4 py-2">{s.parentName}</td>
                                 <td className="px-4 py-2">{s.tpNo}</td>
                                 <td className="px-4 py-2">{s.watsapp}</td>
@@ -138,7 +133,7 @@ export default function Index({ students: originalStudents }: { students: Studen
                                         <Link as="button" href={route('students.edit', s.sid)}>
                                             <FaEdit className="text-2xl hover:text-red-700" />
                                         </Link>
-                                        <button onClick={() => handleDelete(s.id)}>
+                                       <button onClick={() => handleDelete(s.sid)}>
                                             <MdDeleteForever className="text-3xl hover:text-red-700" />
                                         </button>
                                     </td>

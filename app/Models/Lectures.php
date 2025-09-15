@@ -23,6 +23,7 @@ class Lectures extends Model
         'lec_email',
         'status',
         'is_employed',
+        'school_id',
         'bank_account',
         'bank_name',
         'bank_branch',
@@ -41,6 +42,28 @@ class Lectures extends Model
         'is_employed' => 'boolean',
     ];
 
+    public static function rules($isUpdate = false)
+    {
+        $rules = [
+            'lec_name' => 'required|string|max:255',
+            'lec_address' => 'required|string|max:255',
+            'lec_dob' => 'required|date',
+            'qualification' => 'required|string',
+            'tp_no' => 'required|string|digits:10|regex:/^[0-9]{10}$/',
+            'whatsapp_no' => 'required|string|digits:10|regex:/^[0-9]{10}$/',
+            'lec_email' => 'required|email|max:255',
+            'status' => 'boolean',
+            'is_employed' => 'boolean',
+            'school_id' => 'nullable|required_if:is_employed,true|exists:schools,schoolId',
+            'bank_account' => 'nullable|string|regex:/^[0-9]+$/',
+            'bank_name' => 'nullable|string|max:50',
+            'bank_branch' => 'nullable|string|max:50',
+            'vehicle_no' => 'nullable|string|max:20',
+        ];
+
+        return $rules;
+    }
+
     public function classes()
     {
         return $this->belongsToMany(
@@ -55,5 +78,10 @@ class Lectures extends Model
     public function payments()
     {
         return $this->hasMany(LecturePayment::class, 'lid', 'lid');
+    }
+
+    public function school()
+    {
+        return $this->belongsTo(Schools::class, 'school_id', 'schoolId');
     }
 }
