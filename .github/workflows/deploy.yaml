@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted   # use your EC2 self-hosted runner
+    runs-on: self-hosted  # change if you're not using self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
