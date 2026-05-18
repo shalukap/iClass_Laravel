@@ -8,7 +8,7 @@ export default function AppLogo() {
             </div>
             <div className="ml-1 grid flex-1 text-left text-sm">
                 <span className="mb-0.5 text-xl text-center truncate leading-tight font-semibold">Unizone </span>
-                 <span className="mb-0.5 truncate leading-tight font-semibold">iClass Managment system </span>
+                 <span className="mb-0.5 truncate leading-tight font-semibold">iClass Management system </span>
             </div>
         </>
     );

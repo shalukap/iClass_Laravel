@@ -13,22 +13,16 @@ use DB;
 
 class LecturePaymentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $lectures = Lectures::with(['classes', 'payments'])->get()->map(function ($lecture) {
+        $lectures = Lectures::with(['classes.students.payments', 'payments'])->get()->map(function ($lecture) {
             // Calculate total earned (75% of all student payments for their classes)
             $totalEarned = $lecture->classes->sum(function ($class) {
-                $totalStudentPayments = 0;
-                if ($class->students) {
-                    foreach ($class->students as $student) {
-                        if ($student->payments) {
-                            $totalStudentPayments += $student->payments->where('cid', $class->cid)->sum('amount');
-                        }
-                    }
-                }
+                $totalStudentPayments = $class->students->sum(function ($student) use ($class) {
+                    return $student->payments->where('cid', $class->cid)->sum('amount');
+                });
                 return $totalStudentPayments * 0.75;
             });
-
 
             $totalPaid = $lecture->payments->sum('amount');
 
@@ -41,6 +35,10 @@ class LecturePaymentController extends Controller
             ];
         });
 
+        if ($request->wantsJson()) {
+            return response()->json(['lectures' => $lectures]);
+        }
+
         return Inertia::render('lecturePayments/index', [
             'lectures' => $lectures,
         ]);
@@ -51,13 +49,16 @@ class LecturePaymentController extends Controller
         $lid = $request->route('lid') ?? $request->query('lid');
 
         if (!$lid) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Lecture ID is required'], 400);
+            }
             return redirect()->route('lecture-payments.index')
                 ->with('error', 'Lecture ID is required');
         }
 
         $lecture = Lectures::where('lid', $lid)->firstOrFail();
 
-        $classes = $lecture->classes()->withCount('students')->get()->map(function ($class) {
+        $classes = $lecture->classes()->with(['students.payments', 'lecturePayments'])->withCount('students')->get()->map(function ($class) {
             $totalStudentPayments = $class->students->sum(function ($student) use ($class) {
                 return $student->payments->where('cid', $class->cid)->sum('amount');
             });
@@ -79,7 +80,7 @@ class LecturePaymentController extends Controller
             ->latest('payment_date')
             ->first();
 
-        return Inertia::render('lecturePayments/form', [
+        $data = [
             'lecture' => [
                 'lid' => $lecture->lid,
                 'lec_name' => $lecture->lec_name,
@@ -88,65 +89,89 @@ class LecturePaymentController extends Controller
             'last_payment_date' => $last_payment?->payment_date?->toDateString(),
             'current_year' => now()->year,
             'current_month' => now()->month,
-        ]);
-    }
+        ];
 
-public function store(Request $request)
-{
-    $lid = $request->input('lid');
-
-    $request->validate([
-        'cids' => 'required|array',
-        'cids.*' => 'string',
-        'year' => 'required|integer|min:2000|max:2100',
-        'month' => 'required|integer|min:1|max:12',
-        'amount' => 'required|numeric|min:0',
-    ]);
-
-    $errors = [];
-    $successCount = 0;
-
-    foreach ($request->cids as $cid) {
-        $existingPayment = LecturePayment::where([
-            'lid' => $lid,
-            'cid' => $cid,
-            'year' => $request->year,
-            'month' => $request->month,
-        ])->first();
-
-        if ($existingPayment) {
-            $errors[] = "A payment already exists for class $cid in this period.";
-            continue;
+        if ($request->wantsJson()) {
+            return response()->json($data);
         }
 
-        $last = LecturePayment::orderBy('lpid', 'desc')->first();
-        $number = $last ? (int) (substr($last->lpid, 3)) + 1 : 1;
-        $lpid = 'LPY' . str_pad($number, 6, '0', STR_PAD_LEFT);
-
-        LecturePayment::create([
-            'lpid' => $lpid,
-            'lid' => $lid,
-            'cid' => $cid,
-            'year' => $request->year,
-            'month' => $request->month,
-            'amount' => $request->amount,
-            'payment_date' => now(),
-        ]);
-
-        $successCount++;
+        return Inertia::render('lecturePayments/form', $data);
     }
 
-    if (!empty($errors)) {
-        return back()->withErrors([
-            'payment' => implode(' ', $errors) . ($successCount > 0 ? " ($successCount payments were successful)" : ''),
+    public function store(Request $request)
+    {
+        $lid = $request->input('lid');
+
+        $request->validate([
+            'lid' => 'required|string|exists:lectures,lid',
+            'cids' => 'required|array',
+            'cids.*' => 'string',
+            'year' => 'required|integer|min:2000|max:2100',
+            'month' => 'required|integer|min:1|max:12',
+            'amount' => 'required|numeric|min:0',
         ]);
+
+        $errors = [];
+        $successCount = 0;
+
+        foreach ($request->cids as $cid) {
+            $existingPayment = LecturePayment::where([
+                'lid' => $lid,
+                'cid' => $cid,
+                'year' => $request->year,
+                'month' => $request->month,
+            ])->first();
+
+            if ($existingPayment) {
+                $errors[] = "A payment already exists for class $cid in this period.";
+                continue;
+            }
+
+            $last = LecturePayment::orderBy('lpid', 'desc')->first();
+            $number = $last ? (int) (substr($last->lpid, 3)) + 1 : 1;
+            $lpid = 'LPY' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+            LecturePayment::create([
+                'lpid' => $lpid,
+                'lid' => $lid,
+                'cid' => $cid,
+                'year' => $request->year,
+                'month' => $request->month,
+                'amount' => $request->amount,
+                'payment_date' => now(),
+            ]);
+
+            $successCount++;
+        }
+
+        if ($request->wantsJson()) {
+            if (!empty($errors)) {
+                return response()->json([
+                    'message' => implode(' ', $errors) . ($successCount > 0 ? " ($successCount payments were successful)" : ''),
+                    'successCount' => $successCount,
+                    'errors' => $errors
+                ], 422);
+            }
+            return response()->json(['message' => 'Payments recorded successfully', 'successCount' => $successCount]);
+        }
+
+        if (!empty($errors)) {
+            return back()->withErrors([
+                'payment' => implode(' ', $errors) . ($successCount > 0 ? " ($successCount payments were successful)" : ''),
+            ]);
+        }
+
+        return redirect()->route('lecture-payments.index');
     }
 
-    return redirect()->route('lecture-payments.index');
-}
     public function classes(Request $request)
     {
         $classes = Classes::select('cid', 'name', 'medium', 'syllabus')->get();
+
+        if ($request->wantsJson()) {
+            return response()->json(['allClasses' => $classes]);
+        }
+
         return Inertia::render('lecturePayments/classes', [
             'allClasses' => $classes
         ]);

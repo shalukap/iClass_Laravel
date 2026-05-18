@@ -15,26 +15,28 @@ class SchoolsController extends Controller
     {
         $schools = Schools::latest()->get(['schoolId', 'name']);
 
-        return Inertia::render('schools/index', [
-            'schools' => $schools
-        ]);
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json(['schools' => $schools]);
+        }
+
+        return view('app');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        return Inertia::render('schools/CreateOrEdit');
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json([
+                'isEdit' => false
+            ]);
+        }
+
+        return view('app');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $last = Schools::orderBy('schoolId', 'desc')->first();
-        $number = $last ? (substr($last->schoolId, 3) + 1) : 1;
+        $number = $last ? (intval(substr($last->schoolId, 3)) + 1) : 1;
         $schoolId = 'SCH' . sprintf('%06d', $number);
 
         $request->validate([
@@ -46,31 +48,25 @@ class SchoolsController extends Controller
         $school->name = $request->name;
         $school->save();
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['message' => 'School created successfully', 'school' => $school]);
+        }
+
         return redirect()->route('schools.index');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Schools $school)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Schools $school)
     {
-        return Inertia::render('schools/CreateOrEdit', [
-            'school' => $school->only(['schoolId', 'name']),
-            'isEdit' => true
-        ]);
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json([
+                'school' => $school->only(['schoolId', 'name']),
+                'isEdit' => true
+            ]);
+        }
+
+        return view('app');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Schools $school)
     {
         $request->validate([
@@ -82,17 +78,23 @@ class SchoolsController extends Controller
             $school->save();
         }
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['message' => 'School updated successfully', 'school' => $school]);
+        }
+
         return redirect()->route('schools.index');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Schools $school)
     {
         if ($school) {
             $school->delete();
         }
+
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json(['message' => 'School deleted successfully']);
+        }
+
         return redirect()->route('schools.index');
     }
 }

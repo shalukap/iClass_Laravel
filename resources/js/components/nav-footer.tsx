@@ -18,11 +18,11 @@ export function NavFooter({
                         <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton
                                 asChild
-                                className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100"
+                                className="text-white/40 hover:text-white hover:bg-white/5 transition-all duration-300 rounded-lg px-3"
                             >
-                                <a href={item.href} target="_blank" rel="noopener noreferrer">
-                                    {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
-                                    <span>{item.title}</span>
+                                <a href={item.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3">
+                                    {item.icon && <Icon iconNode={item.icon} className="h-4 w-4 text-indigo-400/50" />}
+                                    <span className="text-xs font-medium">{item.title}</span>
                                 </a>
                             </SidebarMenuButton>
                         </SidebarMenuItem>

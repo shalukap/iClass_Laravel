@@ -11,9 +11,13 @@ class ClassroomController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $classrooms = Classroom::latest()->get();
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['classrooms' => $classrooms]);
+        }
 
         return Inertia::render('classrooms/index', [
             'classrooms' => $classrooms
@@ -42,14 +46,22 @@ class ClassroomController extends Controller
         $classroom->name = $request->name;
         $classroom->save();
 
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Classroom created successfully', 'classroom' => $classroom]);
+        }
+
         return redirect()->route('classrooms.index');
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Classroom $classroom)
+    public function edit(Request $request, Classroom $classroom)
     {
+        if ($request->wantsJson()) {
+            return response()->json(['classroom' => $classroom]);
+        }
+
         return Inertia::render('classrooms/create', [
             'classroomItem' => $classroom,
             'isEdit' => true
@@ -66,16 +78,24 @@ class ClassroomController extends Controller
             $classroom->save();
         }
 
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Classroom updated successfully', 'classroom' => $classroom]);
+        }
+
         return redirect()->route('classrooms.index');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Classroom $classroom)
+    public function destroy(Request $request, Classroom $classroom)
     {
         if ($classroom) {
             $classroom->delete();
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Classroom deleted successfully']);
         }
 
         return redirect()->route('classrooms.index');

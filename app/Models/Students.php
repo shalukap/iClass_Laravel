@@ -15,13 +15,13 @@ class Students extends Model
     public static function rules($isUpdate = false)
 {
     $rules = [
-        'tpNo' => ['required', 'digits:10'],
-        'watsapp' => ['required', 'digits:10'],
+        'tpNo' => 'required|string|min:4|max:15',
+        'watsapp' => 'required|string|min:4|max:15',
         'sname' => 'required|string|max:255',
-        'gender' => 'required|in:male,female',
+        'gender' => 'required|in:male,female,other',
         'address' => 'required|string',
         'dob' => 'required|date',
-        'school' => 'required|exists:schools,schoolId', // ✅ match frontend field
+        'school' => 'required|exists:schools,schoolId',
         'parentName' => 'required|string|max:255',
         'isActive' => 'boolean',
     ];

@@ -10,91 +10,106 @@ use Illuminate\Support\Facades\Validator;
 
 class StudentsController extends Controller
 {
-   public function index()
-{
-    $students = Students::with('schoolDetails')->get();
+    public function index()
+    {
+        $students = Students::with('schoolDetails')->get();
 
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json(['students' => $students]);
+        }
 
-    // dd($students->toArray());
-
-    return Inertia::render('students/index', [
-        'students' => $students
-    ]);
-}
-
-
-
+        return view('app');
+    }
 
     public function create()
     {
         $schools = Schools::all(['schoolId', 'name']);
 
-        return Inertia::render('students/create', [
-            'schools' => $schools,
-            'isEdit' => false
-        ]);
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json([
+                'schools' => $schools,
+                'isEdit' => false
+            ]);
+        }
+
+        return view('app');
     }
 
-   public function store(Request $request)
-{
-    $validated = $request->validate(Students::rules(false));
+    public function store(Request $request)
+    {
+        $validated = $request->validate(Students::rules(false));
 
-    $last = Students::orderBy('sid', 'desc')->first();
-    $number = $last ? (substr($last->sid, 3) + 1) : 1;
-    $sid = 'STU' . sprintf('%06d', $number);
+        $last = Students::orderBy('sid', 'desc')->first();
+        $number = $last ? (intval(substr($last->sid, 3)) + 1) : 1;
+        $sid = 'STU' . sprintf('%06d', $number);
 
-    if ($request->hasFile('image')) {
-        $filename = $request->file('image')->getClientOriginalName();
-        $request->file('image')->move(public_path('images'), $filename);
-        $validated['image'] = $filename;
-    } else {
-        $validated['image'] = 'default.jpg';
+        if ($request->hasFile('image')) {
+            $filename = time() . '_' . $request->file('image')->getClientOriginalName();
+            $request->file('image')->move(public_path('images'), $filename);
+            $validated['image'] = '/images/' . $filename;
+        } else {
+            $validated['image'] = '/images/default.jpg';
+        }
+
+        $validated['sid'] = $sid;
+        $validated['schoolId'] = $request->school;
+
+        $student = Students::create($validated);
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['message' => 'Student created successfully', 'student' => $student]);
+        }
+
+        return redirect()->route('students.index');
     }
 
-    $validated['sid'] = $sid;
-    $validated['schoolId'] = $request->school;
+    public function update(Request $request, Students $student)
+    {
+        $validated = $request->validate(Students::rules(true));
 
-    Students::create($validated);
+        if ($request->hasFile('image')) {
+            $filename = time() . '_' . $request->file('image')->getClientOriginalName();
+            $request->file('image')->move(public_path('images'), $filename);
+            $validated['image'] = '/images/' . $filename;
+        }
 
-    return redirect()->route('students.index');
-}
+        $validated['schoolId'] = $request->school;
 
-public function update(Request $request, Students $student)
-{
-    $validated = $request->validate(Students::rules(true));
+        $student->update($validated);
 
-    if ($request->hasFile('image')) {
-        $filename = $request->file('image')->getClientOriginalName();
-        $request->file('image')->move(public_path('images'), $filename);
-        $validated['image'] = $filename;
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['message' => 'Student updated successfully', 'student' => $student]);
+        }
+
+        return redirect()->route('students.index');
     }
 
-    $validated['schoolId'] = $request->school;
+    public function edit(Students $student)
+    {
+        $schools = Schools::all(['schoolId', 'name']);
 
-    $student->update($validated);
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json([
+                'student' => [
+                    ...$student->toArray(),
+                    'school' => $student->schoolId
+                ],
+                'schools' => $schools,
+                'isEdit' => true
+            ]);
+        }
 
-    return redirect()->route('students.index');
-}
-
-public function edit(Students $student)
-{
-    $schools = Schools::all(['schoolId', 'name']);
-
-    return Inertia::render('students/create', [
-        'student' => [
-            ...$student->toArray(),
-            'school' => $student->schoolId
-        ],
-        'schools' => $schools,
-        'isEdit' => true
-    ]);
-}
-
+        return view('app');
+    }
 
     public function destroy(Students $student)
     {
         if ($student) {
             $student->delete();
+        }
+
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json(['message' => 'Student deleted successfully']);
         }
 
         return redirect()->route('students.index');

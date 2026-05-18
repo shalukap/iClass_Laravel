@@ -150,10 +150,34 @@
 
 @layer base {
     * {
-        @apply border-border;
+        @apply border-border outline-ring/50;
     }
 
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground antialiased;
+        font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
     }
+
+    /* Premium Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        @apply bg-transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        @apply bg-muted-foreground/20 rounded-full transition-colors hover:bg-muted-foreground/30;
+    }
+}
+
+/* Glassmorphism utility */
+.glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-xl;
+}
+
+.dark .glass {
+    @apply bg-black/20 backdrop-blur-md border border-white/10 shadow-xl;
 }

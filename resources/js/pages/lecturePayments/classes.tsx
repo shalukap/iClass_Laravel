@@ -1,10 +1,14 @@
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
+import { Helmet } from 'react-helmet-async';
+import { useFormSpa } from '@/hooks/use-form-spa';
 import axios from 'axios';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
+import { Search, GraduationCap, Users, Banknote, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Lecture {
     lid: string;
@@ -36,11 +40,11 @@ interface Student {
     cid: string;
 }
 
-export default function LectureClasses({ allClasses: initialClasses = [] }: { allClasses?: Class[] }) {
+export default function LectureClasses() {
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Lecture Classes',
-            href: route('lecture-payments.classes'),
+            href: '/lecture-payments/classes',
         },
     ];
 
@@ -51,100 +55,113 @@ export default function LectureClasses({ allClasses: initialClasses = [] }: { al
     const [searchType, setSearchType] = useState<'id' | 'name'>('id');
     const [selectedLectureId, setSelectedLectureId] = useState('');
 
-    const { data, setData } = useForm({
+    const { data, setData } = useFormSpa({
         searchTerm: '',
     });
 
-const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMatchedLectures([]);
-    setLecture(null);
-    setStudents([]);
-    setSelectedLectureId('');
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setMatchedLectures([]);
+        setLecture(null);
+        setStudents([]);
+        setSelectedLectureId('');
 
-    try {
-        // Prepare search parameters only if they have value
-        const params: any = {};
-        const term = data.searchTerm.trim();
+        try {
+            const params: any = {};
+            const term = data.searchTerm.trim();
 
-        if (!term) {
-            Swal.fire('Info', 'Please enter a search term', 'info');
-            setLoading(false);
-            return;
-        }
-
-        if (searchType === 'id') {
-            params.lid = term;
-        } else if (searchType === 'name') {
-            params.name = term;
-        }
-
-        const response = await axios.get(`/lecture-enrollments/search`, { params });
-
-        // If searching by ID
-        if (searchType === 'id' && response.data.lecture) {
-            setLecture(response.data.lecture);
-            setStudents(response.data.students || []);
-            setSelectedLectureId(response.data.lecture.lid);
-
-        // If searching by Name
-        } else if (searchType === 'name' && response.data.lectures) {
-            const lectures = response.data.lectures;
-            setMatchedLectures(lectures);
-
-            if (lectures.length === 1) {
-                // Auto-select if only one match
-                fetchLectureDetails(lectures[0].lid);
-            } else if (lectures.length === 0) {
-                Swal.fire('Info', 'No lectures found', 'info');
+            if (!term) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Empty Search',
+                    text: 'Please enter a search term',
+                    background: '#1e293b',
+                    color: '#fff',
+                    confirmButtonColor: '#3b82f6'
+                });
+                setLoading(false);
+                return;
             }
-        } else {
-            Swal.fire('Info', response.data.message || 'No lectures found', 'info');
+
+            if (searchType === 'id') {
+                params.lid = term;
+            } else if (searchType === 'name') {
+                params.name = term;
+            }
+
+            const response = await axios.get(`/lecture-enrollments/search`, { params });
+
+            if (searchType === 'id' && response.data.lecture) {
+                setLecture(response.data.lecture);
+                setStudents(response.data.students || []);
+                setSelectedLectureId(response.data.lecture.lid);
+            } else if (searchType === 'name' && response.data.lectures) {
+                const lectures = response.data.lectures;
+                setMatchedLectures(lectures);
+
+                if (lectures.length === 1) {
+                    fetchLectureDetails(lectures[0].lid);
+                } else if (lectures.length === 0) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Not Found',
+                        text: 'No lectures found with that name',
+                        background: '#1e293b',
+                        color: '#fff'
+                    });
+                }
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Not Found',
+                    text: response.data.message || 'No lectures found',
+                    background: '#1e293b',
+                    color: '#fff'
+                });
+            }
+        } catch (error: any) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.message || 'An error occurred during search',
+                background: '#1e293b',
+                color: '#fff'
+            });
+        } finally {
+            setLoading(false);
         }
+    };
 
-    } catch (error: any) {
-        if (error.response?.status === 404) {
-            Swal.fire('Info', error.response.data.message || 'Lecture not found', 'info');
-        } else {
-            Swal.fire('Error', error.response?.data?.message || 'An error occurred', 'error');
+    const fetchLectureDetails = async (lid: string) => {
+        if (!lid) return;
+
+        setLoading(true);
+        setLecture(null);
+        setStudents([]);
+        setMatchedLectures([]);
+        setSelectedLectureId(lid);
+
+        try {
+            const response = await axios.get(`/lecture-payments/${lid}`);
+
+            if (response.data.lecture) {
+                setLecture(response.data.lecture);
+                setStudents(response.data.students || []);
+                setSelectedLectureId(response.data.lecture.lid);
+            }
+        } catch (error: any) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to fetch lecture details',
+                background: '#1e293b',
+                color: '#fff'
+            });
+        } finally {
+            setLoading(false);
         }
-    } finally {
-        setLoading(false);
-    }
-};
-
-
- const fetchLectureDetails = async (lid: string) => {
-    if (!lid) return;
-
-    setLoading(true);
-    setLecture(null);
-    setStudents([]);
-    setMatchedLectures([]);
-    setSelectedLectureId(lid);
-
-    try {
-        const response = await axios.get(`/lecture-payments/${lid}`);
-
-        if (response.data.lecture) {
-            setLecture(response.data.lecture);
-            setStudents(response.data.students || []);
-            setSelectedLectureId(response.data.lecture.lid);
-        } else {
-            Swal.fire('Info', 'Lecture details not found', 'info');
-        }
-    } catch (error: any) {
-        if (error.response?.status === 404) {
-            Swal.fire('Info', error.response.data.message || 'Lecture not found', 'info');
-        } else {
-            Swal.fire('Error', error.response?.data?.message || 'Failed to fetch lecture details', 'error');
-        }
-    } finally {
-        setLoading(false);
-    }
-};
-
+    };
 
     const handleLectureSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const lid = e.target.value;
@@ -155,169 +172,217 @@ const handleSearch = async (e: React.FormEvent) => {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Lecture Classes" />
-            <div className="mx-auto max-w-full rounded-xl bg-slate-800 p-8 text-white shadow-lg">
-                <h2 className="mb-6 text-center text-2xl font-semibold">Lecture Classes and Payments</h2>
+            <Helmet>
+                <title>Lecture Classes & Payments</title>
+            </Helmet>
 
-                <form onSubmit={handleSearch} className="mb-8">
-                    <div className="mb-4 flex gap-4">
-                        <div className="flex items-center gap-2">
-                            <label className="text-sm font-medium">Search by:</label>
-                            <select
-                                value={searchType}
-                                onChange={(e) => {
-                                    setSearchType(e.target.value as 'id' | 'name');
-                                    setMatchedLectures([]);
-                                    setLecture(null);
-                                    setStudents([]);
-                                }}
-                                className="rounded-md border border-gray-300 bg-slate-800 px-3 py-2 text-white"
-                            >
-                                <option value="id">Lecture ID</option>
-                                <option value="name">Lecture Name</option>
-                            </select>
-                        </div>
-                    </div>
+            <div className="space-y-6">
+                <div className="flex flex-col gap-1">
+                    <h1 className="text-3xl font-bold tracking-tight text-white">Lecture Payments</h1>
+                    <p className="text-muted-foreground">Manage and track lecture earnings and class settlements.</p>
+                </div>
 
-                    <div className="flex gap-4">
-                        <Input
-                            type="text"
-                            name="searchTerm"
-                            placeholder={searchType === 'id' ? "Enter Lecture ID (LID)" : "Enter Lecture Name"}
-                            required
-                            value={data.searchTerm}
-                            onChange={(e) => setData('searchTerm', e.target.value)}
-                            className="flex-1"
-                        />
-                        <button
-                            type="submit"
-                            className="rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white transition-all hover:bg-blue-700 disabled:opacity-50"
-                            disabled={loading}
-                        >
-                            {loading ? 'Searching...' : 'Search'}
-                        </button>
-                    </div>
-                </form>
+                <Card className="border-white/10 bg-white/5 backdrop-blur-xl">
+                    <CardHeader>
+                        <CardTitle className="text-lg font-medium flex items-center gap-2">
+                            <Search className="h-5 w-5 text-indigo-400" />
+                            Search Lectures
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
+                            <div className="w-full md:w-48">
+                                <select
+                                    value={searchType}
+                                    onChange={(e) => {
+                                        setSearchType(e.target.value as 'id' | 'name');
+                                        setMatchedLectures([]);
+                                        setLecture(null);
+                                        setStudents([]);
+                                    }}
+                                    className="w-full h-10 rounded-md border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    <option value="id">Lecture ID</option>
+                                    <option value="name">Lecture Name</option>
+                                </select>
+                            </div>
+
+                            <div className="flex-1 flex gap-2">
+                                <Input
+                                    type="text"
+                                    placeholder={searchType === 'id' ? "Enter LID (e.g. L001)" : "Enter lecturer name..."}
+                                    value={data.searchTerm}
+                                    onChange={(e) => setData('searchTerm', e.target.value)}
+                                    className="bg-slate-900 border-white/10"
+                                />
+                                <Button 
+                                    type="submit" 
+                                    className="bg-indigo-600 hover:bg-indigo-700 transition-all px-8"
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Searching...' : 'Search'}
+                                </Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
 
                 {matchedLectures.length > 0 && (
-                    <div className="mb-6 rounded-lg bg-slate-700 p-4">
-                        <h3 className="mb-3 text-lg font-semibold">Multiple Lectures Found</h3>
-                        <p className="mb-3 text-sm text-gray-300">Please select a lecture from the list:</p>
-                        <select
-                            value={selectedLectureId}
-                            onChange={handleLectureSelect}
-                            className="w-full rounded-md border border-gray-300 bg-slate-800 px-3 py-2 text-white"
-                        >
-                            <option value="">-- Select Lecture --</option>
-                            {matchedLectures.map((lec) => (
-                                <option key={lec.lid} value={lec.lid}>
-                                    {lec.lec_name} ({lec.lid})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    <Card className="border-indigo-500/30 bg-indigo-500/5 backdrop-blur-xl">
+                        <CardContent className="pt-6">
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center gap-2 text-indigo-400">
+                                    <AlertCircle className="h-5 w-5" />
+                                    <p className="text-sm font-medium">Multiple matches found. Please select from the list below:</p>
+                                </div>
+                                <select
+                                    value={selectedLectureId}
+                                    onChange={handleLectureSelect}
+                                    className="w-full h-11 rounded-md border border-white/10 bg-slate-900 px-3 py-2 text-white"
+                                >
+                                    <option value="">-- Select Lecturer --</option>
+                                    {matchedLectures.map((lec) => (
+                                        <option key={lec.lid} value={lec.lid}>
+                                            {lec.lec_name} ({lec.lid})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {lecture && (
-                    <div className="mb-8 rounded-lg bg-slate-700 p-4">
-                        <h3 className="mb-4 text-xl font-semibold">Lecture Information</h3>
-                        <div className="mb-6 grid grid-cols-2 gap-4">
-                            <div>
-                                <p>
-                                    <span className="font-semibold">LID:</span> {lecture.lid}
-                                </p>
-                                <p>
-                                    <span className="font-semibold">Name:</span> {lecture.lec_name}
-                                </p>
-                            </div>
+                    <div className="grid gap-6 animate-in fade-in duration-500">
+                        {/* Lecture Info Summary */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Card className="border-white/10 bg-white/5 backdrop-blur-xl">
+                                <CardContent className="p-6 flex items-center gap-4">
+                                    <div className="rounded-xl bg-indigo-500/10 p-3">
+                                        <GraduationCap className="h-6 w-6 text-indigo-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Lecturer Name</p>
+                                        <p className="text-xl font-bold text-white">{lecture.lec_name}</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-white/10 bg-white/5 backdrop-blur-xl">
+                                <CardContent className="p-6 flex items-center gap-4">
+                                    <div className="rounded-xl bg-purple-500/10 p-3">
+                                        <AlertCircle className="h-6 w-6 text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Lecturer ID</p>
+                                        <p className="text-xl font-bold text-white">{lecture.lid}</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-white/10 bg-white/5 backdrop-blur-xl">
+                                <CardContent className="p-6 flex items-center gap-4">
+                                    <div className="rounded-xl bg-pink-500/10 p-3">
+                                        <Users className="h-6 w-6 text-pink-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Classes Teaching</p>
+                                        <p className="text-xl font-bold text-white">{lecture.classes?.length || 0}</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
 
-                        <h3 className="mb-4 text-xl font-semibold">Classes Teaching</h3>
-                        {lecture.classes && lecture.classes.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-4">
-                                {lecture.classes.map((cls) => (
-                                    <div key={cls.cid} className="rounded-lg bg-slate-600 p-4">
-                                        <div className="mb-2 flex justify-between">
-                                            <span className="font-semibold">Class:</span>
-                                            <span>
-                                                {cls.name} ({cls.cid})
-                                            </span>
-                                        </div>
-                                        <div className="mb-2 flex justify-between">
-                                            <span className="font-semibold">Medium/Syllabus:</span>
-                                            <span>
-                                                {cls.medium} - {cls.syllabus}
-                                            </span>
-                                        </div>
-                                        <div className="mb-2 flex justify-between">
-                                            <span className="font-semibold">Students:</span>
-                                            <span>{cls.student_count}</span>
-                                        </div>
-                                        <div className="mb-2 flex justify-between">
-    <span className="font-semibold">Total Earned (75%):</span>
-    <span>Rs.{Number(cls.total_earned).toFixed(2)}</span>
-</div>
-<div className="mb-2 flex justify-between">
-    <span className="font-semibold">Total Paid:</span>
-    <span>Rs.{Number(cls.total_paid).toFixed(2)}</span>
-</div>
-{cls.due_amount > 0 ? (
-    <div className="mb-2 flex justify-between">
-        <span className="font-semibold">Due Amount:</span>
-        <span className="text-red-400">Rs.{Number(cls.due_amount).toFixed(2)}</span>
-    </div>
-) : (
-    <div className="mb-2 flex justify-between">
-        <span className="font-semibold">Status:</span>
-        <span className="text-green-400">Paid in Full</span>
-    </div>
-)}
-{cls.overpaid_amount > 0 && (
-    <div className="mb-2 flex justify-between">
-        <span className="font-semibold">Overpaid:</span>
-        <span className="text-yellow-400">Rs.{Number(cls.overpaid_amount).toFixed(2)}</span>
-    </div>
-)}
+                        {/* Classes Table/List */}
+                        <div className="space-y-4">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2 px-1">
+                                <Banknote className="h-5 w-5 text-emerald-400" />
+                                Class Settlements
+                            </h2>
 
-                                        <h4 className="mt-4 mb-2 text-lg font-semibold">Students in Class</h4>
-                                        <div className="rounded-md bg-slate-700 p-3">
-                                            {students.filter((s) => s.cid === cls.cid).length > 0 ? (
-                                                <table className="min-w-full divide-y divide-gray-600">
-                                                    <thead>
-                                                        <tr>
-                                                            <th className="px-4 py-2 text-left">SID</th>
-                                                            <th className="px-4 py-2 text-left">Name</th>
-                                                            <th className="px-4 py-2 text-left">Payment Status</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {students
-                                                            .filter((s) => s.cid === cls.cid)
-                                                            .map((student) => (
-                                                                <tr key={student.sid}>
-                                                                    <td className="px-4 py-2">{student.sid}</td>
-                                                                    <td className="px-4 py-2">{student.sname}</td>
-                                                                    <td className="px-4 py-2">
+                            {lecture.classes && lecture.classes.length > 0 ? (
+                                <div className="grid gap-4">
+                                    {lecture.classes.map((cls) => (
+                                        <Card key={cls.cid} className="border-white/10 bg-white/5 overflow-hidden group hover:border-white/20 transition-all">
+                                            <div className="p-6">
+                                                <div className="flex flex-col lg:flex-row justify-between gap-6">
+                                                    {/* Left: Class Info */}
+                                                    <div className="space-y-4 flex-1">
+                                                        <div>
+                                                            <div className="flex items-center gap-3 mb-1">
+                                                                <h3 className="text-lg font-bold text-white">{cls.name}</h3>
+                                                                <span className="text-xs font-mono bg-white/10 text-white/50 px-2 py-0.5 rounded uppercase tracking-wider">
+                                                                    {cls.cid}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {cls.medium} Medium • {cls.syllabus} Syllabus
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                                            <div className="bg-white/[0.03] p-3 rounded-lg border border-white/5">
+                                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">Total Earned (75%)</p>
+                                                                <p className="text-lg font-bold text-indigo-400">Rs.{Number(cls.total_earned).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                                            </div>
+                                                            <div className="bg-white/[0.03] p-3 rounded-lg border border-white/5">
+                                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">Total Paid</p>
+                                                                <p className="text-lg font-bold text-emerald-400">Rs.{Number(cls.total_paid).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                                            </div>
+                                                            <div className="bg-white/[0.03] p-3 rounded-lg border border-white/5 col-span-2 sm:col-span-1">
+                                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">Balance Due</p>
+                                                                <p className={`text-lg font-bold ${cls.due_amount > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                                                                    {cls.due_amount > 0 ? `Rs.${Number(cls.due_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'Settled'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Right: Student Breakdown */}
+                                                    <div className="w-full lg:w-[400px] bg-black/20 rounded-xl border border-white/5 p-4 self-start">
+                                                        <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3 flex items-center justify-between">
+                                                            <span>Students ({students.filter((s) => s.cid === cls.cid).length})</span>
+                                                            {cls.student_count > 0 && <span className="text-[10px] lowercase text-white/20">Scroll to see all</span>}
+                                                        </h4>
+                                                        
+                                                        <div className="max-h-[180px] overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-white/10">
+                                                            {students.filter((s) => s.cid === cls.cid).length > 0 ? (
+                                                                students.filter((s) => s.cid === cls.cid).map((student) => (
+                                                                    <div key={student.sid} className="flex items-center justify-between p-2 rounded-md bg-white/[0.02] border border-white/[0.02] text-xs">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <span className="font-mono text-white/30">{student.sid}</span>
+                                                                            <span className="font-medium text-white/80">{student.sname}</span>
+                                                                        </div>
                                                                         {student.paid ? (
-                                                                            <span className="text-green-400">Paid</span>
+                                                                            <div className="flex items-center gap-1.5 text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
+                                                                                <CheckCircle2 className="h-3 w-3" />
+                                                                                <span className="font-bold">Paid</span>
+                                                                            </div>
                                                                         ) : (
-                                                                            <span className="text-red-400">Not Paid</span>
+                                                                            <div className="flex items-center gap-1.5 text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full">
+                                                                                <AlertCircle className="h-3 w-3" />
+                                                                                <span className="font-bold">Pending</span>
+                                                                            </div>
                                                                         )}
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                    </tbody>
-                                                </table>
-                                            ) : (
-                                                <p className="text-gray-400 italic">No students in this class</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-gray-400 italic">No classes assigned to this lecture</p>
-                        )}
+                                                                    </div>
+                                                                ))
+                                                            ) : (
+                                                                <p className="text-center py-6 text-white/20 italic text-xs">No student data available</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <Card className="border-white/10 bg-white/5 border-dashed">
+                                    <CardContent className="p-12 flex flex-col items-center justify-center text-center opacity-40">
+                                        <Banknote className="h-12 w-12 mb-4" />
+                                        <p>No classes or payments assigned to this lecturer.</p>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

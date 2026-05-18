@@ -1,9 +1,11 @@
-import { type BreadcrumbItem, type SharedData } from '@/types';
+import { type BreadcrumbItem } from '@/types';
 import { Transition } from '@headlessui/react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Helmet } from 'react-helmet-async';
 import { FormEventHandler } from 'react';
+import { useAuth } from '@/contexts/auth-context';
+import { useFormSpa } from '@/hooks/use-form-spa';
 
-import DeleteUser from '@/components/delete-user';
+
 import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -11,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import axios from 'axios';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -25,24 +28,37 @@ type ProfileForm = {
 };
 
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
-    const { auth } = usePage<SharedData>().props;
+    const { user, refreshUser } = useAuth();
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm<Required<ProfileForm>>({
-        name: auth.user.name,
-        email: auth.user.email,
+    const { data, setData, patch, errors, processing, recentlySuccessful } = useFormSpa<Required<ProfileForm>>({
+        name: user?.name || '',
+        email: user?.email || '',
     });
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-
-        patch(route('profile.update'), {
-            preserveScroll: true,
+        patch('/profile', {
+            onSuccess: () => {
+                refreshUser();
+            },
         });
     };
 
+    const resendVerification = async () => {
+        try {
+            await axios.post('/email/verification-notification');
+        } catch (error) {
+            console.error('Failed to resend verification email', error);
+        }
+    };
+
+    if (!user) return null;
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Profile settings" />
+            <Helmet>
+                <title>Profile settings</title>
+            </Helmet>
 
             <SettingsLayout>
                 <div className="space-y-6">
@@ -82,18 +98,17 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                             <InputError className="mt-2" message={errors.email} />
                         </div>
 
-                        {mustVerifyEmail && auth.user.email_verified_at === null && (
+                        {mustVerifyEmail && user.email_verified_at === null && (
                             <div>
                                 <p className="-mt-4 text-sm text-muted-foreground">
                                     Your email address is unverified.{' '}
-                                    <Link
-                                        href={route('verification.send')}
-                                        method="post"
-                                        as="button"
+                                    <button
+                                        type="button"
+                                        onClick={resendVerification}
                                         className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                                     >
                                         Click here to resend the verification email.
-                                    </Link>
+                                    </button>
                                 </p>
 
                                 {status === 'verification-link-sent' && (
@@ -120,7 +135,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                     </form>
                 </div>
 
-                <DeleteUser />
+
             </SettingsLayout>
         </AppLayout>
     );

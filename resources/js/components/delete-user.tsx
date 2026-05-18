@@ -1,5 +1,5 @@
-import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useRef } from 'react';
+import { useFormSpa } from '@/hooks/use-form-spa';
 
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -12,13 +12,12 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 
 export default function DeleteUser() {
     const passwordInput = useRef<HTMLInputElement>(null);
-    const { data, setData, delete: destroy, processing, reset, errors, clearErrors } = useForm<Required<{ password: string }>>({ password: '' });
+    const { data, setData, delete: destroy, processing, reset, errors } = useFormSpa({ password: '' });
 
     const deleteUser: FormEventHandler = (e) => {
         e.preventDefault();
 
-        destroy(route('profile.destroy'), {
-            preserveScroll: true,
+        destroy('/profile', {
             onSuccess: () => closeModal(),
             onError: () => passwordInput.current?.focus(),
             onFinish: () => reset(),
@@ -26,7 +25,6 @@ export default function DeleteUser() {
     };
 
     const closeModal = () => {
-        clearErrors();
         reset();
     };
 
@@ -43,15 +41,15 @@ export default function DeleteUser() {
                     <DialogTrigger asChild>
                         <Button variant="destructive">Delete account</Button>
                     </DialogTrigger>
-                    <DialogContent>
-                        <DialogTitle>Are you sure you want to delete your account?</DialogTitle>
-                        <DialogDescription>
+                    <DialogContent className="bg-slate-900 border-white/10 text-white">
+                        <DialogTitle className="text-white">Are you sure you want to delete your account?</DialogTitle>
+                        <DialogDescription className="text-white/60">
                             Once your account is deleted, all of its resources and data will also be permanently deleted. Please enter your password
                             to confirm you would like to permanently delete your account.
                         </DialogDescription>
                         <form className="space-y-6" onSubmit={deleteUser}>
                             <div className="grid gap-2">
-                                <Label htmlFor="password" className="sr-only">
+                                <Label htmlFor="password" title="Password" className="sr-only">
                                     Password
                                 </Label>
 
@@ -63,6 +61,7 @@ export default function DeleteUser() {
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
                                     placeholder="Password"
+                                    className="bg-slate-800 border-white/10 text-white"
                                     autoComplete="current-password"
                                 />
 
@@ -76,8 +75,8 @@ export default function DeleteUser() {
                                     </Button>
                                 </DialogClose>
 
-                                <Button variant="destructive" disabled={processing} asChild>
-                                    <button type="submit">Delete account</button>
+                                <Button variant="destructive" disabled={processing} type="submit">
+                                    Delete account
                                 </Button>
                             </DialogFooter>
                         </form>

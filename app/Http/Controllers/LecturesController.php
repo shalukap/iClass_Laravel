@@ -13,7 +13,7 @@ class LecturesController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $lectures = Lectures::with('school')->latest()->get([
             'lid',
@@ -33,6 +33,10 @@ class LecturesController extends Controller
             'vehicle_no',
         ]);
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['lectures' => $lectures]);
+        }
+
         return Inertia::render('lectures/index', [
             'lectures' => $lectures,
         ]);
@@ -41,9 +45,13 @@ class LecturesController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
         $schools = Schools::all(['schoolId', 'name']);
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['schools' => $schools]);
+        }
 
         return Inertia::render('lectures/CreateOrEdit', [
             'schools' => $schools,
@@ -59,13 +67,16 @@ class LecturesController extends Controller
         $validator = Validator::make($request->all(), Lectures::rules(false));
 
         if ($validator->fails()) {
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
         }
 
         $last = Lectures::orderBy('lid', 'desc')->first();
-        $number = $last ? (substr($last->lid, 3) + 1) : 1;
+        $number = $last ? (intval(substr($last->lid, 3)) + 1) : 1;
         $lid = 'LEC' . sprintf('%06d', $number);
 
         $lecture = new Lectures();
@@ -86,34 +97,44 @@ class LecturesController extends Controller
         $lecture->vehicle_no = $request->vehicle_no;
         $lecture->save();
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['message' => 'Lecture created successfully', 'lecture' => $lecture]);
+        }
+
         return redirect()->route('lectures.index');
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Lectures $lecture)
+    public function edit(Request $request, Lectures $lecture)
     {
         $schools = Schools::all(['schoolId', 'name']);
 
+        $lectureData = $lecture->only([
+            'lid',
+            'lec_name',
+            'lec_address',
+            'lec_dob',
+            'qualification',
+            'tp_no',
+            'whatsapp_no',
+            'lec_email',
+            'status',
+            'is_employed',
+            'school_id',
+            'bank_account',
+            'bank_name',
+            'bank_branch',
+            'vehicle_no',
+        ]);
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['lecture' => $lectureData, 'schools' => $schools]);
+        }
+
         return Inertia::render('lectures/CreateOrEdit', [
-            'lecture' => $lecture->only([
-                'lid',
-                'lec_name',
-                'lec_address',
-                'lec_dob',
-                'qualification',
-                'tp_no',
-                'whatsapp_no',
-                'lec_email',
-                'status',
-                'is_employed',
-                'school_id',
-                'bank_account',
-                'bank_name',
-                'bank_branch',
-                'vehicle_no',
-            ]),
+            'lecture' => $lectureData,
             'schools' => $schools,
             'isEdit' => true,
         ]);
@@ -127,6 +148,9 @@ class LecturesController extends Controller
         $validator = Validator::make($request->all(), Lectures::rules(true));
 
         if ($validator->fails()) {
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
@@ -150,17 +174,26 @@ class LecturesController extends Controller
             $lecture->save();
         }
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['message' => 'Lecture updated successfully', 'lecture' => $lecture]);
+        }
+
         return redirect()->route('lectures.index');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Lectures $lecture)
+    public function destroy(Request $request, Lectures $lecture)
     {
         if ($lecture) {
             $lecture->delete();
         }
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['message' => 'Lecture deleted successfully']);
+        }
+
         return redirect()->route('lectures.index');
     }
 }

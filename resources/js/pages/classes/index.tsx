@@ -1,23 +1,25 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { Helmet } from 'react-helmet-async';
 import { useEffect, useState } from 'react';
-import { CgAddR } from 'react-icons/cg';
-import { FaEdit } from 'react-icons/fa';
-import { MdDeleteForever } from 'react-icons/md';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, Plus, Edit3, Trash2, BookOpen, Clock, Users, GraduationCap, Layout, Banknote, Languages, FileText } from 'lucide-react';
 import Swal from 'sweetalert2';
+import axios from 'axios';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Classes',
-        href: '/classes',
-    },
+    { title: 'Classes', href: '/classes' },
 ];
 
 interface ClassItem {
     id: number;
     cid: string;
     name: string;
+    day: string;
     time_start: string;
     time_end: string;
     grade: number;
@@ -30,119 +32,231 @@ interface ClassItem {
     syllabus: string;
 }
 
-function handleDelete(c: ClassItem) {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: 'This will permanently delete the class.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.delete(route('classes.destroy', { class: c.cid }), {
-                onSuccess: () => {
-                    Swal.fire('Deleted!', 'Class has been removed.', 'success');
-                },
-            });
-        }
-    });
-}
-
 function formatTime12Hour(time24: string) {
     if (!time24) return '-';
-    const [hourStr, minute] = time24.split(':');
-    let hour = parseInt(hourStr, 10);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    hour = hour % 12 || 12; // convert 0 to 12
-    return `${hour}:${minute} ${ampm}`;
+    try {
+        const [hourStr, minute] = time24.split(':');
+        let hour = parseInt(hourStr, 10);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        hour = hour % 12 || 12;
+        return `${hour}:${minute} ${ampm}`;
+    } catch (e) {
+        return time24;
+    }
 }
 
-export default function Index({ classes: originalClasses }: { classes: ClassItem[] }) {
+export default function Index() {
+    const [classes, setClasses] = useState<ClassItem[]>([]);
     const [searchClass, setSearchClass] = useState('');
-    const [filteredClasses, setFilteredClasses] = useState(originalClasses);
+    const [filteredClasses, setFilteredClasses] = useState<ClassItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
+
+    const fetchClasses = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get('/api/classes');
+            setClasses(response.data.classes || []);
+            setFilteredClasses(response.data.classes || []);
+        } catch (error) {
+            console.error('Error fetching classes:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchClasses();
+    }, []);
 
     useEffect(() => {
         const searchQuery = searchClass.toLowerCase();
-        const filtered = originalClasses.filter(
+        const filtered = classes.filter(
             (c) => (c.cid?.toLowerCase() || '').includes(searchQuery) || (c.name?.toLowerCase() || '').includes(searchQuery),
         );
         setFilteredClasses(filtered);
-    }, [searchClass, originalClasses]);
+    }, [searchClass, classes]);
+
+    const handleDelete = (c: ClassItem) => {
+        Swal.fire({
+            title: 'Delete Class?',
+            text: 'This will remove the class and all associated schedules.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#334155',
+            confirmButtonText: 'Yes, delete it',
+            background: '#1e293b',
+            color: '#fff'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await axios.delete(`/api/classes/${c.cid}`);
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: 'Class has been removed.',
+                        icon: 'success',
+                        background: '#1e293b',
+                        color: '#fff'
+                    });
+                    fetchClasses();
+                } catch (error) {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to delete class.',
+                        icon: 'error',
+                        background: '#1e293b',
+                        color: '#fff'
+                    });
+                }
+            }
+        });
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Classes" />
-
-            <div className="h-full w-full p-6">
-                <div className="mx-auto max-w-full rounded-xl bg-slate-800 p-8 text-white shadow-lg mb-6">
-                    <h2 className="mb-6 text-center text-2xl font-semibold">Class Info</h2>
-                    <input
-                        type="text"
-                        className="w-full rounded-md border border-gray-300 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Search by CID or Name"
-                        value={searchClass}
-                        onChange={(e) => setSearchClass(e.target.value)}
-                    />
-                </div>
-
-                <div className="rounded-lg bg-white shadow overflow-hidden">
-                    <div className="overflow-x-auto"> {/* Added this container for horizontal scrolling */}
-                        <table className="min-w-full">
-                            <thead className="bg-slate-800 text-white">
-                                <tr>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">CID</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Name</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Grade</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Classroom</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Lecturer</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Start Time</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">End Time</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Fee</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Medium</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Syllabus</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {filteredClasses.map((c) => (
-                                    <tr key={c.cid} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">{c.cid}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">{c.name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">Grade {c.grade}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">{c.classroom?.name || '-'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">{c.lecturer?.lec_name || '-'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">{formatTime12Hour(c.time_start)}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">{formatTime12Hour(c.time_end)}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800"> Rs. {c.fee.toFixed(2)}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800 capitalize">{c.medium}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800 capitalize">{c.syllabus}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
-                                            <div className="flex items-center gap-4">
-                                                <Link href={route('classes.edit', c.cid)} className="text-blue-600 hover:text-blue-800 transition-colors">
-                                                    <FaEdit className="text-xl" />
-                                                </Link>
-                                                <button onClick={() => handleDelete(c)} className="text-red-600 hover:text-red-800 transition-colors">
-                                                    <MdDeleteForever className="text-2xl" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+            <Helmet>
+                <title>Class Management - iClass</title>
+            </Helmet>
+            
+            <div className="p-8 space-y-6 pb-20">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-3xl font-bold tracking-tight text-white">Academic Classes</h1>
+                        <p className="text-muted-foreground">Schedule and manage academic sessions, lecturers, and classrooms.</p>
                     </div>
+                    <Button onClick={() => navigate('/classes/create')} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/20 h-11 px-6 rounded-xl">
+                        <Plus className="mr-2 h-5 w-5" />
+                        Create New Class
+                    </Button>
                 </div>
 
-                <div className="fixed bottom-6 right-6">
-                    <button
-                        className="bg-blue-900 text-5xl font-bold text-red-500 rounded-full p-2 shadow-lg hover:text-red-700 transition-transform hover:scale-105"
-                        onClick={() => router.visit(route('classes.create'))}
-                    >
-                        <CgAddR />
-                    </button>
-                </div>
+                <Card className="border-white/10 bg-white/5 backdrop-blur-xl">
+                    <CardHeader className="pb-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <CardTitle className="text-lg font-medium flex items-center gap-2 text-white">
+                                <BookOpen className="h-5 w-5 text-indigo-400" />
+                                Class Schedule
+                            </CardTitle>
+                            <div className="w-full md:w-96 relative">
+                                <Input
+                                    placeholder="Search by name or ID..."
+                                    value={searchClass}
+                                    onChange={(e) => setSearchClass(e.target.value)}
+                                    className="bg-slate-900 border-white/10 text-white h-11 pl-10 rounded-xl"
+                                />
+                                <Search className="absolute left-3 top-3 h-5 w-5 text-white/20" />
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                                <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mb-4" />
+                                <p>Synchronizing schedules...</p>
+                            </div>
+                        ) : filteredClasses.length > 0 ? (
+                            <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden overflow-x-auto shadow-2xl">
+                                <table className="w-full text-sm text-left border-collapse min-w-[1000px]">
+                                    <thead className="bg-white/5 text-white/40 font-bold uppercase tracking-widest text-[10px]">
+                                        <tr>
+                                            <th className="px-6 py-5">Class Details</th>
+                                            <th className="px-6 py-5">Academic Level</th>
+                                            <th className="px-6 py-5">Schedule & Venue</th>
+                                            <th className="px-6 py-5">Finance & Medium</th>
+                                            <th className="px-6 py-5 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5 text-white/80">
+                                        {filteredClasses.map((c) => (
+                                            <tr key={c.cid} className="hover:bg-white/[0.03] transition-all group">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="h-10 w-10 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-500/20 transition-all">
+                                                            <GraduationCap className="h-5 w-5 text-indigo-400" />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-white group-hover:text-indigo-300 transition-colors text-base">{c.name}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-[10px] text-white/40 uppercase tracking-widest font-mono">CID: {c.cid}</span>
+                                                                <Badge variant="outline" className="h-4 border-white/10 text-[9px] px-1 text-white/60 bg-white/5">
+                                                                    {c.day || 'Unset'}
+                                                                </Badge>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <Badge variant="outline" className="w-fit border-indigo-500/20 text-indigo-300 bg-indigo-500/5 text-[10px] font-bold">
+                                                            Grade {c.grade}
+                                                        </Badge>
+                                                        <div className="flex items-center gap-1.5 text-white/60 text-xs">
+                                                            <Users className="h-3 w-3" />
+                                                            <span>{c.lecturer?.lec_name || 'No Lecturer Assigned'}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <div className="flex items-center gap-2 text-white/80 text-xs">
+                                                            <Clock className="h-3.5 w-3.5 text-emerald-400" />
+                                                            <span>{formatTime12Hour(c.time_start)} - {formatTime12Hour(c.time_end)}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-white/40 text-[10px]">
+                                                            <Layout className="h-3 w-3" />
+                                                            <span>{c.classroom?.name || 'Unassigned Venue'}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <div className="flex items-center gap-2 text-white/80 font-mono text-xs">
+                                                            <Banknote className="h-3.5 w-3.5 text-amber-400" />
+                                                            <span>Rs. {c.fee.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex items-center gap-1 text-white/40 text-[10px] uppercase">
+                                                                <Languages className="h-3 w-3" />
+                                                                <span>{c.medium}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1 text-white/40 text-[10px] uppercase">
+                                                                <FileText className="h-3 w-3" />
+                                                                <span>{c.syllabus}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Button asChild size="icon" variant="ghost" className="h-9 w-9 text-white/40 hover:text-indigo-400 hover:bg-indigo-500/10">
+                                                            <Link to={`/classes/${c.cid}/edit`}>
+                                                                <Edit3 className="h-4 w-4" />
+                                                            </Link>
+                                                        </Button>
+                                                        <Button onClick={() => handleDelete(c)} size="icon" variant="ghost" className="h-9 w-9 text-white/40 hover:text-rose-400 hover:bg-rose-500/10">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-24 text-center">
+                                <div className="h-20 w-20 rounded-3xl bg-white/5 flex items-center justify-center mb-6 border border-white/10">
+                                    <BookOpen className="h-10 w-10 text-white/20" />
+                                </div>
+                                <h3 className="text-white font-bold text-xl mb-2">No classes scheduled</h3>
+                                <p className="text-white/40 max-w-sm mx-auto leading-relaxed">
+                                    Define your first academic session to begin managing student enrollments.
+                                </p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
         </AppLayout>
     );

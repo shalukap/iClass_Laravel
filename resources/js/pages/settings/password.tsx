@@ -3,8 +3,9 @@ import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { type BreadcrumbItem } from '@/types';
 import { Transition } from '@headlessui/react';
-import { Head, useForm } from '@inertiajs/react';
+import { Helmet } from 'react-helmet-async';
 import { FormEventHandler, useRef } from 'react';
+import { useFormSpa } from '@/hooks/use-form-spa';
 
 import HeadingSmall from '@/components/heading-small';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ export default function Password() {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
 
-    const { data, setData, errors, put, reset, processing, recentlySuccessful } = useForm({
+    const { data, setData, errors, put, reset, processing, recentlySuccessful } = useFormSpa({
         current_password: '',
         password: '',
         password_confirmation: '',
@@ -31,10 +32,10 @@ export default function Password() {
     const updatePassword: FormEventHandler = (e) => {
         e.preventDefault();
 
-        put(route('password.update'), {
-            preserveScroll: true,
+        put('/user/password', {
             onSuccess: () => reset(),
-            onError: (errors) => {
+            onError: (err: any) => {
+                const errors = err.response?.data?.errors || {};
                 if (errors.password) {
                     reset('password', 'password_confirmation');
                     passwordInput.current?.focus();
@@ -50,7 +51,9 @@ export default function Password() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Password settings" />
+            <Helmet>
+                <title>Password settings</title>
+            </Helmet>
 
             <SettingsLayout>
                 <div className="space-y-6">

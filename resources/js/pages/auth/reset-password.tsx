@@ -1,6 +1,8 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Helmet } from 'react-helmet-async';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
+import { useFormSpa } from '@/hooks/use-form-spa';
+import { useSearchParams } from 'react-router-dom';
 
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -8,20 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 
-interface ResetPasswordProps {
-    token: string;
-    email: string;
-}
+export default function ResetPassword() {
+    const [searchParams] = useSearchParams();
+    const token = searchParams.get('token') || '';
+    const email = searchParams.get('email') || '';
 
-type ResetPasswordForm = {
-    token: string;
-    email: string;
-    password: string;
-    password_confirmation: string;
-};
-
-export default function ResetPassword({ token, email }: ResetPasswordProps) {
-    const { data, setData, post, processing, errors, reset } = useForm<Required<ResetPasswordForm>>({
+    const { data, setData, post, processing, errors, reset } = useFormSpa({
         token: token,
         email: email,
         password: '',
@@ -30,14 +24,16 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('password.store'), {
+        post('/reset-password', {
             onFinish: () => reset('password', 'password_confirmation'),
         });
     };
 
     return (
         <AuthLayout title="Reset password" description="Please enter your new password below">
-            <Head title="Reset password" />
+            <Helmet>
+                <title>Reset password</title>
+            </Helmet>
 
             <form onSubmit={submit}>
                 <div className="grid gap-6">
@@ -88,7 +84,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                     </div>
 
                     <Button type="submit" className="mt-4 w-full" disabled={processing}>
-                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                        {processing && <LoaderCircle className="h-4 w-4 animate-spin mr-2" />}
                         Reset password
                     </Button>
                 </div>

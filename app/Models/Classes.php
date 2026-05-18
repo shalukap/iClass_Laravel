@@ -19,14 +19,17 @@ class Classes extends Model
 
     protected $fillable = [
         'name',
+        'day',
         'time_start',
         'time_end',
         'grade',
         'classroom_id',
         'lid',
         'fee',
+        'recurring_months',
         'medium',
-        'syllabus'
+        'syllabus',
+        'color_code'
     ];
 
     protected $attributes = [
